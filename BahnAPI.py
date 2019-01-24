@@ -14,7 +14,7 @@ class BahnAPI:
 
         self._set_headers()
 
-    def request(self, method, url, **kwargs):
+    def _request(self, method, url, **kwargs):
         try:
             r = method(url, **kwargs)
         except ConnectionError:
@@ -33,22 +33,21 @@ class BahnAPI:
         data = {'name': bahnhof}
         url = self._get_url(self.urls['betriebsstellen'])
 
-        r = self.request(requests.get, url, headers=self.headers_json, params=data)
+        r = self._request(requests.get, url, headers=self.headers_json, params=data)
 
         return r.json()
 
     def get_eva_number(self, edg):
         url = self._get_url(self.urls['station'], suffix=[edg])
 
-        r = self.request(requests.get, url, headers=self.headers_xml)
+        r = self._request(requests.get, url, headers=self.headers_xml)
 
         return r
 
     def get_default_plan(self, eva, date, hour):
         url = self._get_url(self.urls['default_plan'], suffix=[eva, date, hour])
-        print(url)
 
-        r = self.request(requests.get, url, headers=self.headers_xml)
+        r = self._request(requests.get, url, headers=self.headers_xml)
 
         return r
 
@@ -59,4 +58,7 @@ class BahnAPI:
                             'Authorization': 'Bearer ' + config.access_token}
 
     def _get_url(self, url_part, suffix=()):
-        return self.urls['base'] + url_part + '/'.join(suffix)
+        if type(suffix) is str:
+            return self.urls['base'] + url_part + suffix
+        else:
+            return self.urls['base'] + url_part + '/'.join(suffix)

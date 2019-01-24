@@ -1,6 +1,3 @@
-import json
-
-
 def eval_event(zug_event, station):
     zug_event_keys = zug_event.keys()
     event_evaled = dict()
