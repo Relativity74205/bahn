@@ -1,3 +1,12 @@
+token = 'asd'
+
+bahnhof = 'Duisburg Hbf'
+betriebsstelle_response = [{'abbrev': 'EDG', 'name': 'Duisburg Hbf', 'short': 'Duisburg Hbf'}]
+bahnhof_abbrev = 'EDG'
+
+eva_number_response_content = b'<stations>\n\n<station name="Duisburg Hbf" eva="8000086" ds100="EDG" db="true" creationts="19-01-14 15:35:34.347"/>\n\n</stations>\n'
+eva_number = '8000086'
+
 event_ar = {"@id": "-1489180622575952321-1901232217-17", "tl": {"@f": "S", "@t": "p", "@o": "800337", "@c": "S", "@n": "30288"}, "ar": {"@pt": "1901232327", "@pp": "1", "@l": "2", "@ppth": "Dortmund Hbf|Dortmund-Dorstfeld|Dortmund-Wischlingen|Dortmund-Huckarde|Dortmund-Westerfilde|Dortmund-Nette/Oestrich|Dortmund-Mengede|Castrop-Rauxel Hbf|Herne|Wanne-Eickel Hbf|Gelsenkirchen Hbf|Essen-Zollverein Nord|Essen-Altenessen|Essen-Bergeborbeck|Essen-Dellwig|Oberhausen Hbf"}}
 event_dp = {"@id": "1153913907484823289-1901232321-1", "tl": {"@f": "N", "@t": "p", "@o": "800337", "@c": "RB", "@n": "31990"}, "dp": {"@pt": "1901232321", "@pp": "1", "@l": "37", "@ppth": "Duisburg-Wedau|Duisburg-Bissingheim|Duisburg Entenfang"}}
 event_ar_dp = {"@id": "-5671486202462405482-1901232245-3", "tl": {"@f": "D", "@t": "p", "@o": "R2", "@c": "ERB", "@n": "89901"}, "ar": {"@pt": "1901232303", "@pp": "10", "@l": "RE3", "@ppth": "D\u00fcsseldorf Hbf|D\u00fcsseldorf Flughafen"}, "dp": {"@pt": "1901232310", "@pp": "10", "@l": "RE3", "@ppth": "Oberhausen Hbf|Essen-Altenessen|Gelsenkirchen Hbf|Wanne-Eickel Hbf|Herne|Castrop-Rauxel Hbf|Dortmund-Mengede|Dortmund Hbf"}}

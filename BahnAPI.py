@@ -1,6 +1,7 @@
 import json
 
 import requests
+import xmltodict
 
 import config.config as config
 
@@ -11,14 +12,18 @@ class BahnAPI:
         self.headers_json = None
         self.headers_xml = None
         self.urls = config.URLS
+        self.access_token = config.access_token
 
         self._set_headers()
 
-    def _request(self, method, url, **kwargs):
+    @staticmethod
+    def _request(method, url, **kwargs):
         try:
             r = method(url, **kwargs)
         except ConnectionError:
             print("URL wrong")
+            # TODO logging
+            # TODO error handling
             raise
 
         if r.status_code != 200:
@@ -29,7 +34,26 @@ class BahnAPI:
 
         return r
 
-    def get_betriebsstelle(self, bahnhof):
+    def get_bahnhof_abbrev(self, bahnhof):
+        betriebsstelle = self._get_betriebsstelle(bahnhof)
+        bahnhof_abbrev = self._extract_bahnhof_abbrev(betriebsstelle)
+
+        return bahnhof_abbrev
+
+    @staticmethod
+    def _extract_bahnhof_abbrev(betriebsstelle):
+        try:
+            bahnhof_abbrev = betriebsstelle[0]['abbrev']
+        except KeyError:
+            # TODO logging
+            raise
+        except TypeError:
+            # TODO logging
+            raise
+
+        return bahnhof_abbrev
+
+    def _get_betriebsstelle(self, bahnhof):
         data = {'name': bahnhof}
         url = self._get_url(self.urls['betriebsstellen'])
 
@@ -37,12 +61,27 @@ class BahnAPI:
 
         return r.json()
 
-    def get_eva_number(self, edg):
-        url = self._get_url(self.urls['station'], suffix=[edg])
+    def get_eva_number(self, station):
+        url = self._get_url(self.urls['station'], suffix=[station])
 
-        r = self._request(requests.get, url, headers=self.headers_xml)
+        r = self._request(requests.get,
+                          url,
+                          headers=self.headers_xml)
+        eva_number = self._extract_eva_number(r.content)
 
-        return r
+        return eva_number
+
+    @staticmethod
+    def _extract_eva_number(content):
+        # TODO error handling for xml to utf-8
+        r_json = xmltodict.parse(content.decode('utf-8'))
+        try:
+            eva_number = r_json['stations']['station']['@eva']
+        except KeyError:
+            # TODO logging
+            raise
+
+        return eva_number
 
     def get_default_plan(self, eva, date, hour):
         url = self._get_url(self.urls['default_plan'], suffix=[eva, date, hour])
@@ -53,9 +92,9 @@ class BahnAPI:
 
     def _set_headers(self):
         self.headers_json = {'Accept': 'application/json',
-                             'Authorization': 'Bearer ' + config.access_token}
+                             'Authorization': 'Bearer ' + self.access_token}
         self.headers_xml = {'Accept': 'application/xml',
-                            'Authorization': 'Bearer ' + config.access_token}
+                            'Authorization': 'Bearer ' + self.access_token}
 
     def _get_url(self, url_part, suffix=()):
         if type(suffix) is str:
