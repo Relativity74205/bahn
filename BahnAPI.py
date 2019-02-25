@@ -1,8 +1,10 @@
 import json
+import html
 
 import requests
 import xmltodict
 
+import config.config_credentials as credentials
 import config.config as config
 
 
@@ -12,7 +14,7 @@ class BahnAPI:
         self.headers_json = None
         self.headers_xml = None
         self.urls = config.URLS
-        self.access_token = config.access_token
+        self.access_token = credentials.access_token
 
         self._set_headers()
 
@@ -20,17 +22,23 @@ class BahnAPI:
     def _request(method, url, **kwargs):
         try:
             r = method(url, **kwargs)
-        except ConnectionError:
+        except requests.exceptions.RequestException:
             print("URL wrong")
             # TODO logging
             # TODO error handling
             raise
 
         if r.status_code != 200:
+            # TODO logging
             print(f"status_code: {r.status_code}")
             print(r.content)
-            print(json.dumps(r.json(), indent=4))
-            raise ConnectionError
+            if r.status_code == 410:
+                print('Date is in the past')
+            try:
+                print(json.dumps(r.json(), indent=4))
+            except ValueError:
+                print('no json')
+            raise requests.exceptions.RequestException
 
         return r
 
@@ -83,8 +91,31 @@ class BahnAPI:
 
         return eva_number
 
-    def get_default_plan(self, eva, date, hour):
+    def get_default_plan(self, eva: str, date: str, hour: str) -> str:
         url = self._get_url(self.urls['default_plan'], suffix=[eva, date, hour])
+
+        r = self._request(requests.get, url, headers=self.headers_xml)
+        r_content = self._extract_default_plan(r)
+
+        return r_content
+
+    @staticmethod
+    def _extract_default_plan(response: requests.Response) -> str:
+        # TODO exception handling
+        response_content = html.unescape(response.content.decode('utf-8'))
+
+        return response_content
+
+    def get_full_changes(self, eva):
+        url = self._get_url(self.urls['full_changes'], suffix=[eva])
+        print(url)
+
+        r = self._request(requests.get, url, headers=self.headers_xml)
+
+        return r
+
+    def get_recent_changes(self, eva):
+        url = self._get_url(self.urls['recent_changes'], suffix=[eva])
 
         r = self._request(requests.get, url, headers=self.headers_xml)
 

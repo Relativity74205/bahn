@@ -1,8 +1,51 @@
 import pytest
 
-from TimetableObject import *
+from BahnAPI import BahnAPI
+from Timetable import Timetable
 
 import tests.data_tests as data_tests
+
+
+@pytest.fixture
+def tt():
+    ba = BahnAPI()
+    return Timetable(ba)
+
+
+def test_get_default_plan_json(tt):
+    assert False
+
+
+def test_get_default_plan(tt):
+    assert False
+
+
+@pytest.mark.parametrize("station, eva", [
+    ('', None),
+    ('Duisburg Hbf', '8000086')
+])
+def test_get_eva(tt, station, eva):
+    assert tt._get_eva(station) == eva
+
+
+@pytest.mark.parametrize("year, month, day, date", [
+    (2019, 12, 25, '191225'),
+    (2019, 1, 1, '190101'),
+    (19, 1, 1, '190101'),
+    (2001, 0, 0, '010000')
+])
+def test_get_date(year, month, day, date):
+    assert Timetable._get_date(year, month, day) == date
+
+
+@pytest.mark.parametrize("hour_int, hour_str", [
+    (24, '24'),
+    (9, '09'),
+    (0, '00')
+])
+def test_get_hour(hour_int, hour_str):
+    assert Timetable._get_hour(hour_int) == hour_str
+
 
 def test_get_departure_place():
     ppth = 'a|b|c'
@@ -49,5 +92,5 @@ def test_get_line(test_input, expected):
     (data_tests.event_dp, data_tests.event_dp_parsed),
     (data_tests.event_ar_dp, data_tests.event_ar_dp_parsed)
 ])
-def test_eval_event(test_input, expected):
-    assert eval_event(test_input, 'Duisburg Hbf') == expected
+def test_eval_default_plan(test_input, expected):
+    assert eval_default_plan(test_input, 'Duisburg Hbf') == expected
