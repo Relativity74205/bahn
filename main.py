@@ -9,8 +9,8 @@ import Timetable as tt
 ba = ba.BahnAPI()
 tt = tt.Timetable(ba)
 station = 'Duisburg Hbf'
-dp = tt.get_timetable(station, 19, 2, 26, 22)
-print(vars(dp[0]))
+dp = tt.get_timetable_json(station, 19, 2, 27, 22)
+print(dp[0])
 a = 1
 
 #print(json.dumps(test, indent=4))

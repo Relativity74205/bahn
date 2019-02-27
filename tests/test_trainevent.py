@@ -59,3 +59,7 @@ def test_get_time():
     assert TrainEvent._get_time(pt) == '12:34'
     assert not TrainEvent._get_time('')
     assert not TrainEvent._get_time(None)
+
+
+def test_convert_to_dict():
+    assert False

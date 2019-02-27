@@ -23,6 +23,15 @@ class TrainEvent:
         self._set_arrival_paras()
         self._set_departure_paras()
 
+    def convert_to_dict(self):
+        d = vars(self)
+        try:
+            d.pop('raw_event')
+            d.pop('event_keys')
+        except KeyError:
+            pass
+        return d
+
     def _set_arrival_paras(self):
         if 'ar' in self.event_keys:
             arrival_datetime = self._get_value('arrival_datetime')

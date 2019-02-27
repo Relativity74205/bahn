@@ -39,16 +39,11 @@ class Timetable:
 
         return timetable
 
-    def get_timetable_json(self, station: str, year: int, month: int, day: int, hour: int):
+    def get_timetable_json(self, station: str, year: int, month: int, day: int, hour: int) -> List[Dict]:
         timetable = self.get_timetable(station, year, month, day, hour)
-        timetable_json = self._get_timetable_json(timetable)
+        timetable_json = [event.convert_to_dict() for event in timetable]
 
         return timetable_json
-
-    @staticmethod
-    def _get_timetable_json(timetable: List[TrainEvent]):
-        assert False
-        return timetable
 
     @staticmethod
     def _process_raw_train_events(raw_train_events: List[Dict], station: str) -> List[TrainEvent]:
