@@ -4,6 +4,7 @@ import xmltodict
 
 import config.config as config
 from BahnAPI import BahnAPI
+from TrainEvent import TrainEvent
 
 
 class Timetable:
@@ -11,7 +12,7 @@ class Timetable:
         self.ba = bahn_api_object
         self.bahnhof_dict = config.bahnhof_dict
 
-    def get_default_plan(self, station: str, year: int, month: int, day: int, hour: int):
+    def get_timetable(self, station: str, year: int, month: int, day: int, hour: int):
         eva = self._get_eva(station)
         date = self._get_date(year, month, day)
         hour = self._get_hour(hour)
@@ -27,10 +28,31 @@ class Timetable:
             default_plan_json = None
 
         if default_plan_json is not None:
-            station = self._get_station(default_plan_json)
             raw_train_events = self._get_train_events(default_plan_json)
+        else:
+            raw_train_events = None
 
-        return default_plan_json
+        if raw_train_events is not None:
+            timetable = self._process_raw_train_events(raw_train_events, station)
+        else:
+            timetable = None
+
+        return timetable
+
+    def get_timetable_json(self, station: str, year: int, month: int, day: int, hour: int):
+        timetable = self.get_timetable(station, year, month, day, hour)
+        timetable_json = self._get_timetable_json(timetable)
+
+        return timetable_json
+
+    @staticmethod
+    def _get_timetable_json(timetable: List[TrainEvent]):
+        assert False
+        return timetable
+
+    @staticmethod
+    def _process_raw_train_events(raw_train_events: List[Dict], station: str) -> List[TrainEvent]:
+        return [TrainEvent(train_event, station) for train_event in raw_train_events]
 
     @staticmethod
     def _get_default_plan_json(default_plan: str) -> Dict:

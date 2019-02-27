@@ -11,14 +11,14 @@ class TrainEvent:
         self.train_type = self._get_value('train_type')
         self.train_number = self._get_value('train_number')
         self.line = self._get_line()
-        self.arrival_date = None
-        self.arrival_time = None
-        self.arrival_platform = None
-        self.arrival_from = None
-        self.departure_date = None
-        self.departure_time = None
-        self.departure_platform = None
-        self.departure_to = None
+        self.planed_arrival_date = None
+        self.planed_arrival_time = None
+        self.planed_arrival_platform = None
+        self.planed_arrival_from = None
+        self.planed_departure_date = None
+        self.planed_departure_time = None
+        self.planed_departure_platform = None
+        self.planed_departure_to = None
 
         self._set_arrival_paras()
         self._set_departure_paras()
@@ -26,28 +26,28 @@ class TrainEvent:
     def _set_arrival_paras(self):
         if 'ar' in self.event_keys:
             arrival_datetime = self._get_value('arrival_datetime')
-            self.arrival_date = self._get_date(arrival_datetime)
-            self.arrival_time = self._get_time(arrival_datetime)
-            self.arrival_platform = self._get_value('arrival_platform')
-            self.arrival_from = self._get_departure_place(self._get_value('arrival_path'))
+            self.planed_arrival_date = self._get_date(arrival_datetime)
+            self.planed_arrival_time = self._get_time(arrival_datetime)
+            self.planed_arrival_platform = self._get_value('arrival_platform')
+            self.planed_arrival_from = self._get_departure_place(self._get_value('arrival_path'))
         else:
-            self.arrival_date = None
-            self.arrival_time = None
-            self.arrival_platform = None
-            self.arrival_from = self.station
+            self.planed_arrival_date = None
+            self.planed_arrival_time = None
+            self.planed_arrival_platform = None
+            self.planed_arrival_from = self.station
 
     def _set_departure_paras(self):
         if 'dp' in self.event_keys:
             departure_datetime = self._get_value('departure_datetime')
-            self.departure_date = self._get_date(departure_datetime)
-            self.departure_time = self._get_time(departure_datetime)
-            self.departure_platform = self._get_value('departure_platform')
-            self.departure_to = self._get_destination_place(self._get_value('departure_path'))
+            self.planed_departure_date = self._get_date(departure_datetime)
+            self.planed_departure_time = self._get_time(departure_datetime)
+            self.planed_departure_platform = self._get_value('departure_platform')
+            self.planed_departure_to = self._get_destination_place(self._get_value('departure_path'))
         else:
-            self.departure_date = None
-            self.departure_time = None
-            self.departure_platform = None
-            self.departure_to = self.station
+            self.planed_departure_date = None
+            self.planed_departure_time = None
+            self.planed_departure_platform = None
+            self.planed_departure_to = self.station
 
     def _get_value(self, key):
         try:
@@ -65,6 +65,8 @@ class TrainEvent:
             return ppth.split('|')[0]
         except IndexError:
             return None
+        except AttributeError:
+            return None
 
     @staticmethod
     def _get_destination_place(ppth):
@@ -72,17 +74,19 @@ class TrainEvent:
             return ppth.split('|')[-1]
         except IndexError:
             return None
+        except AttributeError:
+            return None
 
     @staticmethod
     def _get_time(pt):
-        if len(pt) == 10:
+        if pt is not None and len(pt) == 10:
             return pt[6:8] + ':' + pt[8:10]
         else:
             return None
 
     @staticmethod
     def _get_date(pt):
-        if len(pt) >= 6:
+        if pt is not None and len(pt) >= 6:
             return '20' + pt[0:2] + '-' + pt[2:4] + '-' + pt[4:6]
         else:
             return None

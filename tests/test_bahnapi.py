@@ -3,7 +3,7 @@ import json
 import pytest
 import requests
 
-import config.config_credentials as config
+import config.config as config
 import BahnAPI
 import tests.data_tests as data_tests
 

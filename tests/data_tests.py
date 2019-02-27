@@ -13,43 +13,43 @@ event_ar_dp = {"@id": "-5671486202462405482-1901232245-3", "tl": {"@f": "D", "@t
 
 event_ar_parsed = {
     "station": "Duisburg Hbf",
-    "type": "S",
+    "train_type": "S",
     "train_number": "30288",
     "line": "S2",
-    "arrival_date": "2019-01-23",
-    "arrival_time": "23:27",
-    "arrival_platform": "1",
-    "arrival_from": "Dortmund Hbf",
-    "departure_date": None,
-    "departure_time": None,
-    "departure_platform": None,
-    "departure_to": "Duisburg Hbf"
+    "planed_arrival_date": "2019-01-23",
+    "planed_arrival_time": "23:27",
+    "planed_arrival_platform": "1",
+    "planed_arrival_from": "Dortmund Hbf",
+    "planed_departure_date": None,
+    "planed_departure_time": None,
+    "planed_departure_platform": None,
+    "planed_departure_to": "Duisburg Hbf"
 }
 event_dp_parsed = {
         "station": "Duisburg Hbf",
-        "type": "RB",
+        "train_type": "RB",
         "train_number": "31990",
         "line": "RB37",
-        "arrival_date": None,
-        "arrival_time": None,
-        "arrival_platform": None,
-        "arrival_from": "Duisburg Hbf",
-        "departure_date": "2019-01-23",
-        "departure_time": "23:21",
-        "departure_platform": "1",
-        "departure_to": "Duisburg-Wedau"
+        "planed_arrival_date": None,
+        "planed_arrival_time": None,
+        "planed_arrival_platform": None,
+        "planed_arrival_from": "Duisburg Hbf",
+        "planed_departure_date": "2019-01-23",
+        "planed_departure_time": "23:21",
+        "planed_departure_platform": "1",
+        "planed_departure_to": "Duisburg Entenfang"
     }
 event_ar_dp_parsed = {
         "station": "Duisburg Hbf",
-        "type": "ERB",
+        "train_type": "ERB",
         "train_number": "89901",
         "line": "RE3",
-        "arrival_date": "2019-01-23",
-        "arrival_time": "23:03",
-        "arrival_platform": "10",
-        "arrival_from": "D\u00fcsseldorf Hbf",
-        "departure_date": "2019-01-23",
-        "departure_time": "23:10",
-        "departure_platform": "10",
-        "departure_to": "Oberhausen Hbf"
+        "planed_arrival_date": "2019-01-23",
+        "planed_arrival_time": "23:03",
+        "planed_arrival_platform": "10",
+        "planed_arrival_from": "D\u00fcsseldorf Hbf",
+        "planed_departure_date": "2019-01-23",
+        "planed_departure_time": "23:10",
+        "planed_departure_platform": "10",
+        "planed_departure_to": "Dortmund Hbf"
     }

@@ -8,8 +8,12 @@ import Timetable as tt
 
 ba = ba.BahnAPI()
 tt = tt.Timetable(ba)
-test = tt.get_default_plan('Duisburg Hbf', 19, 2, 26, 12)
-print(json.dumps(test, indent=4))
+station = 'Duisburg Hbf'
+dp = tt.get_timetable(station, 19, 2, 26, 22)
+print(vars(dp[0]))
+a = 1
+
+#print(json.dumps(test, indent=4))
 
 #print(ba.get_bahnhof_abbrev('Duisburg Hbf'))
 #print(ba.get_eva_number('EDG'))
