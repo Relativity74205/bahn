@@ -95,31 +95,32 @@ class BahnAPI:
         url = self._get_url(self.urls['default_plan'], suffix=[eva, date, hour])
 
         r = self._request(requests.get, url, headers=self.headers_xml)
-        r_content = self._extract_default_plan(r)
+        r_content = self._extract_content(r)
 
         return r_content
 
-    @staticmethod
-    def _extract_default_plan(response: requests.Response) -> str:
-        # TODO exception handling
-        response_content = html.unescape(response.content.decode('utf-8'))
-
-        return response_content
-
     def get_full_changes(self, eva):
         url = self._get_url(self.urls['full_changes'], suffix=[eva])
-        print(url)
 
         r = self._request(requests.get, url, headers=self.headers_xml)
+        r_content = self._extract_content(r)
 
-        return r
+        return r_content
 
     def get_recent_changes(self, eva):
         url = self._get_url(self.urls['recent_changes'], suffix=[eva])
 
         r = self._request(requests.get, url, headers=self.headers_xml)
+        r_content = self._extract_content(r)
 
-        return r
+        return r_content
+
+    @staticmethod
+    def _extract_content(response: requests.Response) -> str:
+        # TODO exception handling
+        response_content = html.unescape(response.content.decode('utf-8'))
+
+        return response_content
 
     def _set_headers(self):
         self.headers_json = {'Accept': 'application/json',
