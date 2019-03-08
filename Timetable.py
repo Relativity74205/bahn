@@ -4,7 +4,7 @@ import xmltodict
 
 import config.config as config
 from BahnAPI import BahnAPI
-from TrainStop import TrainStop, get_train_stop_from_db, save_train_stop_bulk
+from TrainStop import TrainStop, get_train_stop_from_db
 
 
 class Timetable:
@@ -16,12 +16,12 @@ class Timetable:
         raw_train_stop_changes = self._get_raw_train_stop_changes(station)
 
         if raw_train_stop_changes is not None:
+            # TODO
             train_stop = self._process_raw_train_stop_changes(raw_train_stop_changes, station)
-            save_train_stop_bulk(train_stop)
 
     def save_default_timetable(self, station: str, year: int, month: int, day: int, hour: int):
+        # TODO
         timetable = self.get_default_timetable(station, year, month, day, hour)
-        save_train_stop_bulk(timetable)
 
     def get_default_timetable(self, station: str, year: int, month: int, day: int, hour: int) -> List[TrainStop]:
         eva = self._get_eva(station)

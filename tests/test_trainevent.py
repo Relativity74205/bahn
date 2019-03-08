@@ -49,16 +49,16 @@ def test_get_destination_place():
 
 def test_get_date():
     pt = '1912231234'
-    assert TrainStop._get_date(pt) == '2019-12-23'
-    assert not TrainStop._get_date('')
-    assert not TrainStop._get_date(None)
+    assert TrainStop._get_datetime(pt) == '2019-12-23'
+    assert not TrainStop._get_datetime('')
+    assert not TrainStop._get_datetime(None)
 
 
 def test_get_time():
     pt = '1912231234'
-    assert TrainStop._get_time(pt) == '12:34'
-    assert not TrainStop._get_time('')
-    assert not TrainStop._get_time(None)
+    assert TrainStop._get_timestr(pt) == '12:34'
+    assert not TrainStop._get_timestr('')
+    assert not TrainStop._get_timestr(None)
 
 
 def test_get_id():

@@ -1,3 +1,5 @@
+DB_URL = {'url': 'sqlite:///database.db'}
+
 URLS = {'default_plan': '/timetables/v1/plan/',
         'station': '/timetables/v1/station/',
         'betriebsstellen': '/betriebsstellen/v1/betriebsstellen',

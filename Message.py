@@ -5,7 +5,8 @@ from DatabaseConnection import Base
 
 
 class MessageIDs(Base):
-    id = Column(Integer, primary_key=True)
+    __tablename__ = 'message_ids'
+    id = Column(Integer, primary_key=True, autoincrement=True)
     trainstop_id = Column(Integer)
     message_id = Column(Integer)
 
@@ -15,7 +16,8 @@ class MessageIDs(Base):
 
 
 class Message(Base):
-    message_id = Column(Integer, primary_key=True)
+    __tablename__ = 'messages'
+    message_id = Column(Integer, primary_key=True, autoincrement=True)
     message_type = Column(String)
     from_datetime = Column(DateTime)
     to_datetime = Column(DateTime)
