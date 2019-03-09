@@ -112,7 +112,10 @@ class TrainStop(Base):
         return value
 
     @staticmethod
-    def _get_departure_place(ppth):
+    def _get_departure_place(ppth: str):
+        if ppth == '' or ppth is None:
+            return None
+
         try:
             return ppth.split('|')[0]
         except IndexError:
@@ -121,7 +124,10 @@ class TrainStop(Base):
             return None
 
     @staticmethod
-    def _get_destination_place(ppth):
+    def _get_destination_place(ppth: str):
+        if ppth == '' or ppth is None:
+            return None
+
         try:
             return ppth.split('|')[-1]
         except IndexError:

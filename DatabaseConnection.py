@@ -35,9 +35,9 @@ class DatabaseConnection:
         with self.error_handling():
             self.session.bulk_save_objects(objects)
             self.session.commit()
-
-    def get_train_stop_from_db(train_stop_change: Dict) -> Optional[TrainStop]:
-        return None
+    #
+    # def get_train_stop_from_db(train_stop_change: Dict) -> Optional[TrainStop]:
+    #     return None
 
     @contextmanager
     def error_handling(self):

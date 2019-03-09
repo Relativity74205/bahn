@@ -4,7 +4,7 @@ import xmltodict
 
 import config.config as config
 from BahnAPI import BahnAPI
-from TrainStop import TrainStop, get_train_stop_from_db
+from TrainStop import TrainStop
 
 
 class Timetable:
