@@ -10,11 +10,11 @@ def tt():
     return Timetable(ba)
 
 
-def test_get_default_plan_json(tt):
+def test_get_timetable_json(tt):
     assert False
 
 
-def test_get_default_plan(tt):
+def test_get_default_timetable(tt):
     assert False
 
 

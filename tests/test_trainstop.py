@@ -7,15 +7,17 @@ from TrainStop import TrainStop
 import tests.data_tests as data_tests
 
 
-@pytest.mark.parametrize("test_input, expected", [
+# TODO rewrite to check object and not dict
+@pytest.mark.parametrize('test_input, expected', [
     (data_tests.event_ar, data_tests.event_ar_parsed),
     (data_tests.event_dp, data_tests.event_dp_parsed),
     (data_tests.event_ar_dp, data_tests.event_ar_dp_parsed)
 ])
 def test_eval_default_plan(test_input, expected):
-    te = vars(TrainStop(test_input, 'Duisburg Hbf'))
+    te = vars(TrainStop(test_input, '8000086', 'Duisburg Hbf'))
     te.pop('raw_event')
     te.pop('event_keys')
+    te.pop('_sa_instance_state')
     assert te == expected
 
 
@@ -35,7 +37,7 @@ def test_get_train_number(number, train_type, train_number):
     ({'tl': {'@c': 'ABR', '@n': '1234'}, 'ar': {'p': '2', '@l': 'RE19'}}, 'RE19')
 ])
 def test_get_line(input_dict, line):
-    assert TrainStop(input_dict, 'Duisburg Hbf')._get_line() == line
+    assert TrainStop(input_dict, '123', 'Duisburg Hbf')._get_line() == line
 
 
 @pytest.mark.parametrize('ppth, place', [
@@ -85,13 +87,22 @@ def test_get_time(pt, timestr):
     assert TrainStop._get_timestr(pt) == timestr
 
 
-def test_get_id():
-    assert False
+@pytest.mark.parametrize('raw_event, trainstop_id', [
+    (data_tests.event_ar, data_tests.id_event_ar),
+    (data_tests.event_dp, data_tests.id_event_dp),
+    (data_tests.event_ar_dp, data_tests.id_event_ar_dp)
+])
+def test_get_id(raw_event, trainstop_id):
+    ts = TrainStop(raw_event, '123', 'asd')
+    ts._get_id()
+    assert ts.trainstop_id == trainstop_id
 
 
-def test_get_value():
-    assert False
-
-
-def test_convert_to_dict():
-    assert False
+@pytest.mark.parametrize('raw_event, train_stop_dict', [
+    (data_tests.event_ar, data_tests.event_ar_parsed),
+    (data_tests.event_dp, data_tests.event_dp_parsed),
+    (data_tests.event_ar_dp, data_tests.event_ar_dp_parsed)
+])
+def test_convert_to_dict(raw_event, train_stop_dict):
+    ts = TrainStop(raw_event, '8000086', 'Duisburg Hbf')
+    assert ts.convert_to_dict() == train_stop_dict

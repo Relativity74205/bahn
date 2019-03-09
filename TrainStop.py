@@ -12,7 +12,7 @@ class TrainStop(Base):
 
     trainstop_id = Column(String, primary_key=True)
     station = Column(String)
-    eva_number = Column(Integer)
+    eva_number = Column(String)
     trip_type = Column(String)
     filter_flags = Column(String)
     owner = Column(String)
@@ -31,15 +31,13 @@ class TrainStop(Base):
     changed_departure_datetime = Column(DateTime)
     changed_departure_platform = Column(String)
     changed_departure_to = Column(String)
-    message_ids_id = Column(Integer)
 
-    def __init__(self, raw_event_data: Dict, station: str):
+    def __init__(self, raw_event_data: Dict, eva: str, station: str):
         self.raw_event = raw_event_data
         self.event_keys = raw_event_data.keys()
         self.trainstop_id = self._get_id()
         self.station = station
-        # TODO
-        self.eva_number = None
+        self.eva_number = eva
         self.trip_type = self._get_value('trip_type')
         self.filter_flags = self._get_value('filter_flags')
         self.owner = self._get_value('owner')
@@ -58,7 +56,6 @@ class TrainStop(Base):
         self.changed_departure_datetime = None
         self.changed_departure_platform = None
         self.changed_departure_to = None
-        self.message_id = None
 
         self._set_arrival_paras()
         self._set_departure_paras()
@@ -68,6 +65,7 @@ class TrainStop(Base):
         try:
             d.pop('raw_event')
             d.pop('event_keys')
+            d.pop('_sa_instance_state')
         except KeyError:
             pass
 

@@ -31,7 +31,7 @@ class Timetable:
         raw_train_stops = self._get_raw_data(eva=eva, date=date, hour=hour)
 
         if raw_train_stops is not None:
-            timetable = self._process_raw_train_stops(raw_train_stops, station)
+            timetable = self._process_raw_train_stops(raw_train_stops, eva, station)
         else:
             timetable = None
 
@@ -84,8 +84,8 @@ class Timetable:
         return train_stop
 
     @staticmethod
-    def _process_raw_train_stops(raw_train_stops: List[Dict], station: str) -> List[TrainStop]:
-        return [TrainStop(raw_train_stop, station) for raw_train_stop in raw_train_stops]
+    def _process_raw_train_stops(raw_train_stops: List[Dict], eva: str, station: str) -> List[TrainStop]:
+        return [TrainStop(raw_train_stop, eva, station) for raw_train_stop in raw_train_stops]
 
     @staticmethod
     def _xml_to_json(xml_str: str) -> Dict:
