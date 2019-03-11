@@ -14,7 +14,9 @@ import tests.data_tests as data_tests
     (data_tests.event_ar_dp, data_tests.event_ar_dp_parsed)
 ])
 def test_eval_default_plan(test_input, expected):
-    te = vars(TrainStop(test_input, '8000086', 'Duisburg Hbf'))
+    ts = TrainStop()
+    ts.create(test_input, '8000086', 'Duisburg Hbf')
+    te = vars(ts)
     te.pop('raw_event')
     te.pop('event_keys')
     te.pop('_sa_instance_state')

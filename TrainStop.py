@@ -1,13 +1,14 @@
-from typing import Dict, Optional
+from typing import Dict
 from datetime import datetime
 
 from sqlalchemy import Column, Integer, String, DateTime
 
 import config.config as config
-from DatabaseConnection import Base
+from Base import Base
+from TrainStopChange import TrainStopChange
 
 
-class TrainStop(Base):
+class TrainStop(Base, TrainStopChange):
     __tablename__ = 'trainstops'
 
     trainstop_id = Column(String, primary_key=True)
@@ -25,14 +26,29 @@ class TrainStop(Base):
     planed_departure_datetime = Column(DateTime)
     planed_departure_platform = Column(String)
     planed_departure_to = Column(String)
+    arrival_cancellation_time = Column(DateTime)
     changed_arrival_datetime = Column(DateTime)
     changed_arrival_platform = Column(String)
     changed_arrival_from = Column(String)
+    changed_arrival_status = Column(String)
+    departure_cancellation_time = Column(DateTime)
     changed_departure_datetime = Column(DateTime)
     changed_departure_platform = Column(String)
     changed_departure_to = Column(String)
+    changed_departure_status = Column(String)
+    departure_delay = Column(Integer)
+    arrival_delay = Column(Integer)
+    flag_cancelled_arrival = Column(Integer)
+    flag_cancelled_departure = Column(Integer)
+    flag_delayed_departure = Column(Integer)
+    flag_delayed_arrival = Column(Integer)
+    flag_changed_platform = Column(Integer)
 
-    def __init__(self, raw_event_data: Dict, eva: str, station: str):
+    def __init__(self):
+        self.raw_event = None
+        self.event_keys = None
+
+    def create(self, raw_event_data: Dict, eva: str, station: str):
         self.raw_event = raw_event_data
         self.event_keys = raw_event_data.keys()
         self.trainstop_id = self._get_id()
@@ -44,21 +60,28 @@ class TrainStop(Base):
         self.train_type = self._get_value('train_type')
         self.train_number = self._get_value('train_number')
         self.line = self._get_line()
-        self.planed_arrival_datetime = None
-        self.planed_arrival_platform = None
-        self.planed_arrival_from = None
-        self.planed_departure_datetime = None
-        self.planed_departure_platform = None
-        self.planed_departure_to = None
-        self.changed_arrival_datetime = None
-        self.changed_arrival_platform = None
-        self.changed_arrival_from = None
-        self.changed_departure_datetime = None
-        self.changed_departure_platform = None
-        self.changed_departure_to = None
-
         self._set_arrival_paras()
         self._set_departure_paras()
+
+    def update(self, train_stop: TrainStopChange):
+        self.arrival_cancellation_time = train_stop.arrival_cancellation_time
+        self.changed_arrival_datetime = train_stop.changed_arrival_datetime
+        self.changed_arrival_platform = train_stop.changed_arrival_platform
+        self.changed_arrival_from = train_stop.changed_arrival_from
+        self.changed_arrival_status = train_stop.changed_arrival_status
+        self.departure_cancellation_time = train_stop.departure_cancellation_time
+        self.changed_departure_datetime = train_stop.changed_departure_datetime
+        self.changed_departure_platform = train_stop.changed_departure_platform
+        self.changed_departure_to = train_stop.changed_departure_to
+        self.changed_departure_status = train_stop.changed_departure_status
+        self.departure_delay = self._calc_delay(self.changed_departure_datetime, self.planed_departure_datetime)
+        self.arrival_delay = self._calc_delay(self.changed_arrival_datetime, self.planed_arrival_datetime)
+        self.flag_cancelled_arrival = self._calc_flag_cancelled(self.changed_arrival_status)
+        self.flag_cancelled_departure = self._calc_flag_cancelled(self.changed_departure_status)
+        self.flag_delayed_departure = self._calc_flag_delayed(self.changed_departure_datetime)
+        self.flag_delayed_arrival = self._calc_flag_delayed(self.changed_arrival_datetime)
+        self.flag_changed_platform = self._calc_changed_platform(self.changed_departure_platform,
+                                                                 self.changed_arrival_platform)
 
     def convert_to_dict(self):
         d = vars(self)
@@ -71,11 +94,33 @@ class TrainStop(Base):
 
         return d
 
-    def _get_id(self):
-        try:
-            return self.raw_event[config.train_event_keys['id']]
-        except KeyError:
-            return None
+    @staticmethod
+    def _calc_flag_cancelled(changed_status):
+        if changed_status == 'c':
+            return 1
+        else:
+            return 0
+
+    @staticmethod
+    def _calc_changed_platform(changed_departure_platform, changed_arrival_platform):
+        if changed_arrival_platform is None and changed_departure_platform is None:
+            return 0
+        else:
+            return 1
+
+    @staticmethod
+    def _calc_flag_delayed(changed_time):
+        if changed_time is None:
+            return 0
+        else:
+            return 1
+
+    @staticmethod
+    def _calc_delay(planned_time: datetime, changed_time: datetime) -> int:
+        if changed_time is None:
+            return 0
+        else:
+            (changed_time - planned_time).total_seconds()
 
     def _set_arrival_paras(self):
         if config.train_event_keys['arrival'] in self.event_keys:
@@ -83,10 +128,6 @@ class TrainStop(Base):
             self.planed_arrival_datetime = self._get_datetime(arrival_datetime)
             self.planed_arrival_platform = self._get_value('arrival_platform')
             self.planed_arrival_from = self._get_departure_place(self._get_value('arrival_path'))
-        else:
-            self.planed_arrival_datetime = None
-            self.planed_arrival_platform = None
-            self.planed_arrival_from = self.station
 
     def _set_departure_paras(self):
         if config.train_event_keys['departure'] in self.event_keys:
@@ -94,67 +135,6 @@ class TrainStop(Base):
             self.planed_departure_datetime = self._get_datetime(departure_datetime)
             self.planed_departure_platform = self._get_value('departure_platform')
             self.planed_departure_to = self._get_destination_place(self._get_value('departure_path'))
-        else:
-            self.planed_departure_datetime = None
-            self.planed_departure_platform = None
-            self.planed_departure_to = self.station
-
-    def _get_value(self, key):
-        try:
-            keys = config.train_event_keys[key]
-            value = self.raw_event[keys['para1']][keys['para2']]
-        except KeyError:
-            # TODO logging
-            value = None
-
-        return value
-
-    @staticmethod
-    def _get_departure_place(ppth: str):
-        if ppth == '' or ppth is None:
-            return None
-
-        try:
-            return ppth.split('|')[0]
-        except IndexError:
-            return None
-        except AttributeError:
-            return None
-
-    @staticmethod
-    def _get_destination_place(ppth: str):
-        if ppth == '' or ppth is None:
-            return None
-
-        try:
-            return ppth.split('|')[-1]
-        except IndexError:
-            return None
-        except AttributeError:
-            return None
-
-    @staticmethod
-    def _get_timestr(pt):
-        if pt is not None and len(pt) == 10:
-            return f'{pt[6:8]}:{pt[8:10]}:00'
-        else:
-            return None
-
-    @staticmethod
-    def _get_datestr(pt):
-        if pt is not None and len(pt) >= 6:
-            return f'20{pt[0:2]}-{pt[2:4]}-{pt[4:6]}'
-        else:
-            return None
-
-    @staticmethod
-    def _get_datetime(pt):
-        date = TrainStop._get_datestr(pt)
-        tstamp = TrainStop._get_timestr(pt)
-        if tstamp is not None and date is not None:
-            return datetime.strptime(f'{date} {tstamp}', '%Y-%m-%d %H:%M:%S')
-        else:
-            return None
 
     @staticmethod
     def _get_train_number(number, train_type):

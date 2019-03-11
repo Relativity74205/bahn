@@ -5,19 +5,23 @@ import xmltodict
 import config.config as config
 from BahnAPI import BahnAPI
 from TrainStop import TrainStop
+from TrainStopChange import TrainStopChange
+from DatabaseConnection import DatabaseConnection
 
 
 class Timetable:
-    def __init__(self, bahn_api_object: BahnAPI):
+    def __init__(self, bahn_api_object: BahnAPI, db: DatabaseConnection):
         self.ba = bahn_api_object
         self.bahnhof_dict = config.bahnhof_dict
+        self.db = db
 
     def update_timetable(self, station: str):
-        raw_train_stop_changes = self._get_raw_train_stop_changes(station)
+        eva = self._get_eva(station)
+        raw_train_stop_changes = self._get_raw_train_stop_changes(eva)
 
         if raw_train_stop_changes is not None:
             # TODO
-            train_stop = self._process_raw_train_stop_changes(raw_train_stop_changes, station)
+            train_stops = self._process_raw_train_stop_changes(raw_train_stop_changes, eva, station)
 
     def save_default_timetable(self, station: str, year: int, month: int, day: int, hour: int):
         # TODO
@@ -26,12 +30,12 @@ class Timetable:
     def get_default_timetable(self, station: str, year: int, month: int, day: int, hour: int) -> List[TrainStop]:
         eva = self._get_eva(station)
         date = self._get_date(year, month, day)
-        hour = self._get_hour(hour)
+        hour_filled = self._get_hour(hour)
 
-        raw_train_stops = self._get_raw_data(eva=eva, date=date, hour=hour)
+        raw_train_stops = self._get_raw_data(eva=eva, date=date, hour=hour_filled)
 
         if raw_train_stops is not None:
-            timetable = self._process_raw_train_stops(raw_train_stops, eva, station)
+            timetable = self._process_raw_train_stops(raw_train_stops, eva, station, hour)
         else:
             timetable = None
 
@@ -43,9 +47,7 @@ class Timetable:
 
         return timetable_json
 
-    def _get_raw_train_stop_changes(self, station: str) -> List:
-        eva = self._get_eva(station)
-
+    def _get_raw_train_stop_changes(self, eva: str) -> List:
         raw_train_stop_changes = self._get_raw_data(eva=eva)
 
         return raw_train_stop_changes
@@ -71,21 +73,32 @@ class Timetable:
 
         return raw_data
 
-    def _process_raw_train_stop_changes(self, raw_train_stop_changes: List[Dict], station: str) -> List[TrainStop]:
-        return [self._process_raw_train_stop_change_single(train_stop_change, station)
-                    for train_stop_change in raw_train_stop_changes]
+    def _process_raw_train_stop_changes(self, raw_train_stop_changes: List[Dict], eva: str, station: str) -> List[TrainStop]:
+        return [self._process_raw_train_stop_change_single(train_stop_change, eva, station)
+                for train_stop_change in raw_train_stop_changes]
 
-    @staticmethod
-    def _process_raw_train_stop_change_single(train_stop_change: Dict, station: str) -> TrainStop:
-        train_stop = get_train_stop_from_db(train_stop_change)
-        if train_stop is None:
-            train_stop = TrainStop(train_stop_change, station)
+    def _process_raw_train_stop_change_single(self, raw_train_stop_change: Dict, eva: str, station: str) -> TrainStop:
+        train_stop_change = TrainStopChange(raw_train_stop_change, eva, station)
+
+        if train_stop_change.trainstop_id is not None:
+            train_stop: TrainStop = self.db.get_by_pk(TrainStop, train_stop_change.trainstop_id)
+        else:
+            train_stop = None
+
+        if train_stop is not None:
+            train_stop.update(train_stop_change)
 
         return train_stop
 
     @staticmethod
-    def _process_raw_train_stops(raw_train_stops: List[Dict], eva: str, station: str) -> List[TrainStop]:
-        return [TrainStop(raw_train_stop, eva, station) for raw_train_stop in raw_train_stops]
+    def _process_raw_train_stops(raw_train_stops: List[Dict], eva: str, station: str, hour: int) -> List[TrainStop]:
+        trainstops = []
+        for raw_train_stop in raw_train_stops:
+            ts = TrainStop()
+            ts.create(raw_train_stop, eva, station)
+            if ts.planed_arrival_datetime is None or ts.planed_arrival_datetime.hour == hour:
+                trainstops.append(ts)
+        return trainstops
 
     @staticmethod
     def _xml_to_json(xml_str: str) -> Dict:

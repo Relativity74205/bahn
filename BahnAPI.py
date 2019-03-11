@@ -44,14 +44,17 @@ class BahnAPI:
 
     def get_bahnhof_abbrev(self, bahnhof):
         betriebsstelle = self._get_betriebsstelle(bahnhof)
-        bahnhof_abbrev = self._extract_bahnhof_abbrev(betriebsstelle)
+        bahnhof_abbrev = self._extract_bahnhof_abbrev(betriebsstelle, bahnhof)
 
         return bahnhof_abbrev
 
     @staticmethod
-    def _extract_bahnhof_abbrev(betriebsstelle):
+    def _extract_bahnhof_abbrev(betriebsstelle, bahnhof):
+        bahnhof_abbrev = None
         try:
-            bahnhof_abbrev = betriebsstelle[0]['abbrev']
+            for entry in betriebsstelle:
+                if entry['name'] == bahnhof:
+                    bahnhof_abbrev = entry['abbrev']
         except KeyError:
             # TODO logging
             raise
