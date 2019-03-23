@@ -49,7 +49,7 @@ def test_get_line(input_dict, line):
     ('aa', 'aa')
 ])
 def test_get_departure_place(ppth, place):
-    assert TrainStop._get_departure_place(ppth) == place
+    assert TrainStop.get_departure_place(ppth) == place
 
 
 @pytest.mark.parametrize('ppth, place', [
@@ -59,7 +59,7 @@ def test_get_departure_place(ppth, place):
     ('aa', 'aa')
 ])
 def test_get_destination_place(ppth, place):
-    assert TrainStop._get_destination_place(ppth) == place
+    assert TrainStop.get_destination_place(ppth) == place
 
 
 @pytest.mark.parametrize('pt, tstamp', [
@@ -68,7 +68,7 @@ def test_get_destination_place(ppth, place):
     (None, None)
 ])
 def test_get_datetime(pt, tstamp):
-    assert TrainStop._get_datetime(pt) == tstamp
+    assert TrainStop.get_datetime(pt) == tstamp
 
 
 @pytest.mark.parametrize('pt, datestr', [
@@ -96,7 +96,7 @@ def test_get_time(pt, timestr):
 ])
 def test_get_id(raw_event, trainstop_id):
     ts = TrainStop(raw_event, '123', 'asd')
-    ts._get_id()
+    ts.get_id()
     assert ts.trainstop_id == trainstop_id
 
 

@@ -7,7 +7,6 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 
 import config.config as config
-from TrainStop import TrainStop
 from Base import Base
 
 

@@ -1,11 +1,12 @@
 from typing import Optional, List, Dict
+from datetime import datetime
 
 import xmltodict
 
 import config.config as config
 from BahnAPI import BahnAPI
-from TrainStop import TrainStop
 from TrainStopChange import TrainStopChange
+from TrainStop import TrainStop
 from DatabaseConnection import DatabaseConnection
 
 
@@ -15,13 +16,18 @@ class Timetable:
         self.bahnhof_dict = config.bahnhof_dict
         self.db = db
 
-    def update_timetable(self, station: str):
+    def get_changes(self, station: str) -> List[TrainStopChange]:
         eva = self._get_eva(station)
-        raw_train_stop_changes = self._get_raw_train_stop_changes(eva)
+        tstamp_request = datetime.now()
+        request_type = 'full'
+        raw_tscs = self._get_raw_train_stop_changes(request_type, eva=eva)
 
-        if raw_train_stop_changes is not None:
-            # TODO
-            train_stops = self._process_raw_train_stop_changes(raw_train_stop_changes, eva, station)
+        if raw_tscs is not None:
+            train_stop_changes = self._process_raw_tscs(raw_tscs, eva, station, request_type, tstamp_request)
+        else:
+            train_stop_changes = None
+
+        return train_stop_changes
 
     def save_default_timetable(self, station: str, year: int, month: int, day: int, hour: int):
         # TODO
@@ -32,7 +38,7 @@ class Timetable:
         date = self._get_date(year, month, day)
         hour_filled = self._get_hour(hour)
 
-        raw_train_stops = self._get_raw_data(eva=eva, date=date, hour=hour_filled)
+        raw_train_stops = self._get_raw_data('default', eva=eva, date=date, hour=hour_filled)
 
         if raw_train_stops is not None:
             timetable = self._process_raw_train_stops(raw_train_stops, eva, station, hour)
@@ -47,17 +53,21 @@ class Timetable:
 
         return timetable_json
 
-    def _get_raw_train_stop_changes(self, eva: str) -> List:
-        raw_train_stop_changes = self._get_raw_data(eva=eva)
+    def _get_raw_train_stop_changes(self, request_type: str, eva: str) -> List:
+        raw_train_stop_changes = self._get_raw_data(request_type, eva=eva)
 
         return raw_train_stop_changes
 
-    def _get_raw_data(self, eva, date=None, hour=None) -> List:
+    def _get_raw_data(self, request_type: str, eva: str, date: str = None, hour: str = None) -> List:
         if eva is not None:
-            if date is not None:
+            if request_type == 'default':
                 raw_str = self.ba.get_default_plan(eva, date, hour)
-            else:
+            elif request_type == 'full':
+                raw_str = self.ba.get_full_changes(eva)
+            elif request_type == 'recent':
                 raw_str = self.ba.get_recent_changes(eva)
+            else:
+                raw_str = None
         else:
             raw_str = None
 
@@ -73,12 +83,14 @@ class Timetable:
 
         return raw_data
 
-    def _process_raw_train_stop_changes(self, raw_train_stop_changes: List[Dict], eva: str, station: str) -> List[TrainStop]:
-        return [self._process_raw_train_stop_change_single(train_stop_change, eva, station)
-                for train_stop_change in raw_train_stop_changes]
+    def _process_raw_tscs(self, raw_tscs: List[Dict], eva: str, station: str, request_type: str,
+                          tstamp_request: datetime) -> List[TrainStopChange]:
+        return [self._process_raw_tsc_single(train_stop_change, eva, station, request_type, tstamp_request)
+                for train_stop_change in raw_tscs]
 
-    def _process_raw_train_stop_change_single(self, raw_train_stop_change: Dict, eva: str, station: str) -> TrainStop:
-        train_stop_change = TrainStopChange(raw_train_stop_change, eva, station)
+    def _process_raw_tsc_single(self, raw_tsc: Dict, eva: str, station: str, request_type: str,
+                                tstamp_request: datetime) -> TrainStopChange:
+        train_stop_change = TrainStopChange(raw_tsc, eva, station, request_type, tstamp_request)
 
         if train_stop_change.trainstop_id is not None:
             train_stop: TrainStop = self.db.get_by_pk(TrainStop, train_stop_change.trainstop_id)
@@ -87,8 +99,9 @@ class Timetable:
 
         if train_stop is not None:
             train_stop.update(train_stop_change)
+            self.db.session.add(train_stop)
 
-        return train_stop
+        return train_stop_change
 
     @staticmethod
     def _process_raw_train_stops(raw_train_stops: List[Dict], eva: str, station: str, hour: int) -> List[TrainStop]:
