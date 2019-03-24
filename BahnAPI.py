@@ -1,5 +1,8 @@
 import json
 import html
+import logging
+from typing import List, Dict
+import xml
 
 import requests
 import xmltodict
@@ -22,23 +25,9 @@ class BahnAPI:
     def _request(method, url, **kwargs):
         try:
             r = method(url, **kwargs)
-        except requests.exceptions.RequestException:
-            print("URL wrong")
-            # TODO logging
-            # TODO error handling
-            raise
-
-        if r.status_code != 200:
-            # TODO logging
-            print(f"status_code: {r.status_code}")
-            print(r.content)
-            if r.status_code == 410:
-                print('Date is in the past')
-            try:
-                print(json.dumps(r.json(), indent=4))
-            except ValueError:
-                print('no json')
-            raise requests.exceptions.RequestException
+        except requests.exceptions.RequestException as e:
+            msg = f'Request failed, probably wrong url; error_msg: {str(e)}'
+            raise Exception(msg) from e
 
         return r
 
@@ -49,18 +38,18 @@ class BahnAPI:
         return bahnhof_abbrev
 
     @staticmethod
-    def _extract_bahnhof_abbrev(betriebsstelle, bahnhof):
+    def _extract_bahnhof_abbrev(betriebsstelle: List[Dict], bahnhof: str) -> str:
         bahnhof_abbrev = None
         try:
             for entry in betriebsstelle:
                 if entry['name'] == bahnhof:
                     bahnhof_abbrev = entry['abbrev']
-        except KeyError:
-            # TODO logging
-            raise
-        except TypeError:
-            # TODO logging
-            raise
+        except KeyError as e:
+            logging.critical(f'KeyError during _extract_bahnhof_abbrev; error_msg: {str(e)}')
+            bahnhof_abbrev = None
+        except TypeError as e:
+            logging.critical(f'TypeError during _extract_bahnhof_abbrev; error_msg: {str(e)}')
+            bahnhof_abbrev = None
 
         return bahnhof_abbrev
 
@@ -69,61 +58,95 @@ class BahnAPI:
         url = self._get_url(self.urls['betriebsstellen'])
 
         r = self._request(requests.get, url, headers=self.headers_json, params=data)
+        try:
+            r_json = r.json()
+        except ValueError:
+            r_json = None
+            logging.critical('Response from _get_betriebsstelle has no json')
 
-        return r.json()
+        return r_json
 
-    def get_eva_number(self, station):
+    def get_eva_number(self, station: str) -> str:
         url = self._get_url(self.urls['station'], suffix=[station])
 
-        r = self._request(requests.get,
-                          url,
-                          headers=self.headers_xml)
-        eva_number = self._extract_eva_number(r.content)
+        r = self._request(requests.get, url, headers=self.headers_xml)
+        eva_number = self._extract_eva_number(r)
 
         return eva_number
 
-    @staticmethod
-    def _extract_eva_number(content):
-        # TODO error handling for xml to utf-8
-        r_json = xmltodict.parse(content.decode('utf-8'))
+    def _extract_eva_number(self, response: requests.Response) -> str:
+        r_json = self._xml_content_to_json(response)
         try:
             eva_number = r_json['stations']['station']['@eva']
-        except KeyError:
-            # TODO logging
-            raise
+        except KeyError as e:
+            logging.critical(f'Extracting EVA number from json failed; '
+                             f'json_dumps {json.dumps(r_json)}; error_msg: {str(e)}')
+            eva_number = None
 
         return eva_number
 
-    def get_default_plan(self, eva: str, date: str, hour: str) -> str:
+    # TODO refactor get_default_plan, get_full_changes and get_recent_changes into one
+    def get_default_plan(self, eva: str, date: str, hour: str) -> Dict:
         url = self._get_url(self.urls['default_plan'], suffix=[eva, date, hour])
 
         r = self._request(requests.get, url, headers=self.headers_xml)
-        r_content = self._extract_content(r)
+        self._log_status_code(r, 'get_default_plan')
+        if r.status_code != 200:
+            r_json = None
+        else:
+            r_json = self._xml_content_to_json(r)
 
-        return r_content
+        return r_json
 
-    def get_full_changes(self, eva):
+    def get_full_changes(self, eva: str) -> Dict:
         url = self._get_url(self.urls['full_changes'], suffix=[eva])
 
         r = self._request(requests.get, url, headers=self.headers_xml)
-        r_content = self._extract_content(r)
+        self._log_status_code(r, 'get_full_changes')
+        if r.status_code != 200:
+            r_json = None
+        else:
+            r_json = self._xml_content_to_json(r)
 
-        return r_content
+        return r_json
 
-    def get_recent_changes(self, eva):
+    def get_recent_changes(self, eva: str) -> Dict:
         url = self._get_url(self.urls['recent_changes'], suffix=[eva])
 
         r = self._request(requests.get, url, headers=self.headers_xml)
-        r_content = self._extract_content(r)
+        self._log_status_code(r, 'get_recent_changes')
+        if r.status_code != 200:
+            r_json = None
+        else:
+            r_json = self._xml_content_to_json(r)
 
-        return r_content
+        return r_json
 
     @staticmethod
-    def _extract_content(response: requests.Response) -> str:
+    def _log_status_code(r, f_name: str) -> None:
+        if r.status_code != 200:
+            logging.critical(f'Response from {f_name}-request has not status_code 200; '
+                             f'status_code is {r.status_code}; content is {r.content}')
+            if r.status_code == 410:
+                logging.critical(f'{f_name}-request failed probably due to date is in the past')
+            elif r.status_code == 400:
+                logging.critical(f'{f_name}-request failed probably due to incorrect EVA number')
+            elif r.status_code == 404:
+                logging.critical(f'{f_name}-request failed probably due to date is in the future')
+
+            try:
+                logging.critical(f'JSON is {json.dumps(r.json(), indent=4)}')
+            except ValueError:
+                logging.critical('Response is no json')
+        else:
+            logging.info(f'{f_name}-request successful')
+
+    def _xml_content_to_json(self, response: requests.Response) -> Dict:
         # TODO exception handling
         response_content = html.unescape(response.content.decode('utf-8'))
+        response_json = self._xml_str_to_json(response_content)
 
-        return response_content
+        return response_json
 
     def _set_headers(self):
         self.headers_json = {'Accept': 'application/json',
@@ -131,8 +154,28 @@ class BahnAPI:
         self.headers_xml = {'Accept': 'application/xml',
                             'Authorization': 'Bearer ' + self.access_token}
 
-    def _get_url(self, url_part, suffix=()):
+    def _get_url(self, url_part: str, suffix=()) -> str:
         if type(suffix) is str:
             return self.urls['base'] + url_part + suffix
         else:
             return self.urls['base'] + url_part + '/'.join(suffix)
+
+    @staticmethod
+    def _decode_xml_content(response: requests.Response) -> str:
+        try:
+            response_content = html.unescape(response.content.decode('utf-8'))
+        except Exception as e:
+            logging.critical(f'Could not decode xml content; error_msg: {str(e)}')
+            response_content = None
+
+        return response_content
+
+    @staticmethod
+    def _xml_str_to_json(xml_str: str) -> Dict:
+        try:
+            json_dict = xmltodict.parse(xml_str)
+        except xml.parsers.expat.ExpatError as e:
+            logging.critical(f'Parsing of xml-response not possible; xml_str: {str}; error_msg: {str(e)}')
+            json_dict = None
+
+        return json_dict

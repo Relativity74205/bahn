@@ -1,4 +1,5 @@
 import time
+import logging
 
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -8,6 +9,7 @@ import Timetable
 
 
 def main():
+    set_logging_config()
     db = dc.DatabaseConnection()
     reset_db(db)
 
@@ -15,7 +17,13 @@ def main():
 
     timetable = Timetable.Timetable(ba, db)
     get_default_time_table(db, timetable)
-    get_changes(db, timetable)
+    # get_changes(db, timetable)
+
+
+def set_logging_config():
+    logging.basicConfig(filename='test_log.log',
+                        format='%(asctime)s %(levelname)s: %(message)s',
+                        level=logging.DEBUG)
 
 
 def reset_db(db):
@@ -40,7 +48,7 @@ def get_default_time_table(db: dc.DatabaseConnection, timetable: Timetable):
     list_trainstops = timetable.get_default_timetable(station='Duisburg Hbf',
                                                       year=2019,
                                                       month=3,
-                                                      day=23,
+                                                      day=24,
                                                       hour=21)
 
     try:

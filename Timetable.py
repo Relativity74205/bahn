@@ -1,8 +1,6 @@
 from typing import Optional, List, Dict
 from datetime import datetime
 
-import xmltodict
-
 import config.config as config
 from BahnAPI import BahnAPI
 from TrainStopChange import TrainStopChange
@@ -61,18 +59,13 @@ class Timetable:
     def _get_raw_data(self, request_type: str, eva: str, date: str = None, hour: str = None) -> List:
         if eva is not None:
             if request_type == 'default':
-                raw_str = self.ba.get_default_plan(eva, date, hour)
+                raw_dict = self.ba.get_default_plan(eva, date, hour)
             elif request_type == 'full':
-                raw_str = self.ba.get_full_changes(eva)
+                raw_dict = self.ba.get_full_changes(eva)
             elif request_type == 'recent':
-                raw_str = self.ba.get_recent_changes(eva)
+                raw_dict = self.ba.get_recent_changes(eva)
             else:
-                raw_str = None
-        else:
-            raw_str = None
-
-        if raw_str is not None:
-            raw_dict = self._xml_to_json(raw_str)
+                raw_dict = None
         else:
             raw_dict = None
 
@@ -112,13 +105,6 @@ class Timetable:
             if ts.planed_arrival_datetime is None or ts.planed_arrival_datetime.hour == hour:
                 trainstops.append(ts)
         return trainstops
-
-    @staticmethod
-    def _xml_to_json(xml_str: str) -> Dict:
-        # TODO error handling
-        json_dict = xmltodict.parse(xml_str)
-
-        return json_dict
 
     @staticmethod
     def _get_train_stops(train_stop_dict: Dict) -> List:
