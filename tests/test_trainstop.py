@@ -108,3 +108,7 @@ def test_get_id(raw_event, trainstop_id):
 def test_convert_to_dict(raw_event, train_stop_dict):
     ts = TrainStop(raw_event, '8000086', 'Duisburg Hbf')
     assert ts.convert_to_dict() == train_stop_dict
+
+
+def test_get_datehour_request():
+    assert False
