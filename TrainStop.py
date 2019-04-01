@@ -11,6 +11,7 @@ class TrainStop(Base):
     __tablename__ = 'trainstops'
 
     trainstop_id = Column(String, primary_key=True)
+    datehour_request = Column(String)
     station = Column(String)
     eva_number = Column(String)
     trip_type = Column(String)
@@ -37,9 +38,10 @@ class TrainStop(Base):
         self.raw_event = None
         self.event_keys = None
 
-    def create(self, raw_event_data: Dict, eva: str, station: str):
+    def create(self, raw_event_data: Dict, eva: str, station: str, date: str, hour: int):
         self.raw_event = raw_event_data
         self.event_keys = raw_event_data.keys()
+        self.datehour_request = self._get_datehour_request(date, hour)
         self.trainstop_id = self.get_id(self.raw_event)
         self.station = station
         self.eva_number = eva
@@ -192,3 +194,7 @@ class TrainStop(Base):
             return None
         except AttributeError:
             return None
+
+    @staticmethod
+    def _get_datehour_request(date: str, hour: int) -> str:
+        return date + str(hour)
