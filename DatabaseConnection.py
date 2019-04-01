@@ -1,13 +1,14 @@
 from typing import List
 from contextlib import contextmanager
 
-from sqlalchemy import create_engine
-
+from sqlalchemy import create_engine, func, and_
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 
 import config.config as config
 from Base import Base
+from TrainStopChange import TrainStopChange
+from TrainStop import TrainStop
 
 
 class DatabaseConnection:
@@ -40,12 +41,32 @@ class DatabaseConnection:
         try:
             yield
         except SQLAlchemyError as e:
-            print(f'SQLAlchemyError (type {type(e).__name__}) during : {msg}, Exception: {str(e)}')
-            raise
+            msg = f'SQLAlchemyError (type {type(e).__name__}) during : {msg}, Exception: {str(e)}'
+            raise SQLAlchemyError(msg)
 
     def get_by_pk(self, obj: object, pk_id):
         msg = f'Getting Object {obj.__name__} by PK {pk_id};'
         with self.error_handling(msg):
             result = self.session.query(obj).get(pk_id)
+
+        return result
+
+    def get_last_tstamp_request(self, station: str, request_type: str):
+        msg = f'Error when getting last_tstamp_request for station {station} and request_type {request_type}.'
+        with self.error_handling(msg):
+            result = (self.session
+                      .query(func.max(TrainStopChange.tstamp_request))
+                      .filter(and_(TrainStopChange.request_type == request_type, TrainStopChange.station == station))
+                      .scalar())
+
+        return result
+
+    def get_last_datehour_default_plan(self, station: str):
+        msg = f'Error when getting last datehour default_plan for station {station}'
+        with self.error_handling(msg):
+            result = (self.session
+                      .query(func.max(TrainStop.datehour_request))
+                      .filter(TrainStop.station == station)
+                      .scalar())
 
         return result
