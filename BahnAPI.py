@@ -132,7 +132,8 @@ class BahnAPI:
             elif r.status_code == 400:
                 logging.critical(f'{f_name}-request failed probably due to incorrect EVA number')
             elif r.status_code == 404:
-                logging.critical(f'{f_name}-request failed probably due to date is in the future')
+                logging.critical(f'{f_name}-request failed probably due to date is too much in the future, '
+                                 f'or incorrect datetime specified, for example hour=24')
 
             try:
                 logging.critical(f'JSON is {json.dumps(r.json(), indent=4)}')
