@@ -1,21 +1,16 @@
 from typing import Optional, List, Dict
 from datetime import datetime
-import logging
-
-from sqlalchemy.exc import SQLAlchemyError
 
 import config.config as config
 from BahnAPI import BahnAPI
 from TrainStopChange import TrainStopChange
 from TrainStop import TrainStop
-from DatabaseConnection import DatabaseConnection
 
 
 class Timetable:
-    def __init__(self, bahn_api_object: BahnAPI, db: DatabaseConnection):
+    def __init__(self, bahn_api_object: BahnAPI):
         self.ba = bahn_api_object
         self.bahnhof_dict = config.bahnhof_dict
-        self.db = db
 
     def get_changes(self, station: str, request_type: str) -> List[TrainStopChange]:
         eva = self._get_eva(station)
@@ -27,14 +22,6 @@ class Timetable:
             train_stop_changes = self._process_raw_tscs(raw_tscs, eva, station, request_type, tstamp_request)
         else:
             train_stop_changes = None
-
-        try:
-            self.db.save_bulk(train_stop_changes, 'TrainStopChanges')
-        except SQLAlchemyError as e:
-            logging.critical(f'Error while writing TrainStops into DB; error_msg: {str(e)}')
-            if 'constraint failed' in str(e):
-                logging.critical('At least one dataset already in DB, switching to fallback')
-                # TODO create fallback function (instead of bulk insert, insert single line and looking before)
 
         return train_stop_changes
 
@@ -50,16 +37,6 @@ class Timetable:
             timetable = self._process_raw_train_stops(raw_train_stops, eva, station, date, hour)
         else:
             timetable = None
-
-        # TODO refactor
-        if timetable is not None:
-            try:
-                self.db.save_bulk(timetable, 'TrainStops')
-            except SQLAlchemyError as e:
-                logging.critical(f'Error while writing TrainStops into DB; error_msg: {str(e)}')
-                if 'constraint failed' in str(e):
-                    logging.critical('At least one dataset already in DB, switching to fallback')
-                    # TODO create fallback function (instead of bulk insert, insert single line and looking before)
 
         return timetable
 
@@ -94,26 +71,11 @@ class Timetable:
 
         return raw_data
 
-    def _process_raw_tscs(self, raw_tscs: List[Dict], eva: str, station: str, request_type: str,
+    @staticmethod
+    def _process_raw_tscs(raw_tscs: List[Dict], eva: str, station: str, request_type: str,
                           tstamp_request: datetime) -> List[TrainStopChange]:
-        return [self._process_raw_tsc_single(train_stop_change, eva, station, request_type, tstamp_request)
+        return [TrainStopChange(train_stop_change, eva, station, request_type, tstamp_request)
                 for train_stop_change in raw_tscs]
-
-    def _process_raw_tsc_single(self, raw_tsc: Dict, eva: str, station: str, request_type: str,
-                                tstamp_request: datetime) -> TrainStopChange:
-        train_stop_change = TrainStopChange(raw_tsc, eva, station, request_type, tstamp_request)
-
-        # TODO refactor, remove db from Timetable
-        if train_stop_change.trainstop_id is not None:
-            train_stop: TrainStop = self.db.get_by_pk(TrainStop, train_stop_change.trainstop_id)
-        else:
-            train_stop = None
-
-        if train_stop is not None:
-            train_stop.update(train_stop_change)
-            self.db.session.add(train_stop)
-
-        return train_stop_change
 
     @staticmethod
     def _process_raw_train_stops(raw_train_stops: List[Dict], eva: str, station: str, date: str, hour: int) \
