@@ -31,10 +31,13 @@ class DatabaseConnection:
         Base.metadata.drop_all(self.engine)
 
     def save_bulk(self, objects: List, obj_name: str):
-        msg = f'Bulk saving {len(objects)} {obj_name} objects;'
+        msg = f'Error while writing bulk saving {len(objects)} {obj_name} objects;'
         with self.error_handling(msg):
             self.session.bulk_save_objects(objects)
             self.session.commit()
+        # TODO create fallback function (instead of bulk insert, insert single line and looking before)
+        # if 'constraint failed' in str(e):
+        #     logging.critical('At least one dataset already in DB, switching to fallback')
 
     @contextmanager
     def error_handling(self, msg):
@@ -51,13 +54,19 @@ class DatabaseConnection:
 
         return result
 
-    def get_last_tstamp_request(self, station: str, request_type: str):
+    def get_last_tstamp_request(self, station: str, request_type: str = None):
         msg = f'Error when getting last_tstamp_request for station {station} and request_type {request_type}.'
         with self.error_handling(msg):
-            result = (self.session
-                      .query(func.max(TrainStopChange.tstamp_request))
-                      .filter(and_(TrainStopChange.request_type == request_type, TrainStopChange.station == station))
-                      .scalar())
+            if request_type:
+                result = (self.session
+                          .query(func.max(TrainStopChange.tstamp_request))
+                          .filter(and_(TrainStopChange.request_type == request_type, TrainStopChange.station == station))
+                          .scalar())
+            else:
+                result = (self.session
+                          .query(func.max(TrainStopChange.tstamp_request))
+                          .filter(TrainStopChange.station == station)
+                          .scalar())
 
         return result
 
@@ -70,3 +79,7 @@ class DatabaseConnection:
                       .scalar())
 
         return result
+
+    def reset_db(self):
+        self.drop_all()
+        self.create_tables()
