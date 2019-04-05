@@ -92,7 +92,9 @@ class APIRequests:
             for datehour in missing_datehours:
                 logging.debug(f'Getting default tables for station {station} and datehour {datehour}')
                 self.requests_heap.append_event()
-                timetables += self.timetable.get_default_timetable(station, *datehour)
+                new_timetables = self.timetable.get_default_timetable(station, *datehour)
+                if new_timetables is not None:
+                    timetables += new_timetables
         self.last_complete_update['default'] = datetime.now()
         logging.debug('Ended getting default plans, commiting to database')
 
@@ -125,9 +127,12 @@ class APIRequests:
             self.wait_for_available_requests(requests_needed=1)
 
             if self.short_time_since_last_update(station):
-                train_stop_changes += self.get_single_update(station, request_type='recent')
+                new_train_stop_changes = self.get_single_update(station, request_type='recent')
             else:
-                train_stop_changes += self.get_single_update(station, request_type='full')
+                new_train_stop_changes = self.get_single_update(station, request_type='full')
+            if new_train_stop_changes is not None:
+                train_stop_changes += new_train_stop_changes
+
             self.requests_heap.append_event()
             logging.debug(f'Got update for station: {station}')
 
