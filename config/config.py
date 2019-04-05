@@ -1,3 +1,8 @@
+SLEEP_TIME_BETWEEN_UPDATES = 2
+RECENT_REQUEST_LIFETIME = 115
+HOURS_BETWEEN_UPDATES = {'default': 2,
+                         'full': 0.5}
+
 DB_URL = {'url': 'sqlite:///database.db'}
 
 URLS = {'default_plan': '/timetables/v1/plan/',
@@ -6,6 +11,18 @@ URLS = {'default_plan': '/timetables/v1/plan/',
         'base': 'https://api.deutschebahn.com',
         'full_changes': '/timetables/v1/fchg/',
         'recent_changes': '/timetables/v1/rchg/'}
+
+stations = ['Köln Hbf',
+            'Düsseldorf Hbf',
+            'Duisburg Hbf',
+            'Essen Hbf',
+            'Oberhausen Hbf',
+            'Bochum Hbf',
+            'Dortmund Hbf',
+            'Neuss Hbf',
+            'Krefeld Hbf',
+            'Mülheim (Ruhr) Hbf',
+            'Düsseldorf Flughafen']
 
 bahnhof_dict = {'Köln Hbf': {'abbrev': 'KK', 'eva': '8000207'},
                 'Düsseldorf Hbf': {'abbrev': 'KD', 'eva': '8000085'},
