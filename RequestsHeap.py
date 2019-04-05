@@ -6,23 +6,23 @@ class RequestsHeap:
     def __init__(self):
         self.heap = []
         # TODO move limit_requests_heap and event_lifetime to config
-        self.event_lifetime = 130
+        self.seconds_event_lifetime = 125
         self.limit_requests_heap = 20
 
     def append_event(self):
-        self.heap.append(datetime.now() + timedelta(seconds=self.event_lifetime))
+        self.heap.append(datetime.now() + timedelta(seconds=self.seconds_event_lifetime))
 
-    def check_requests_heap(self):
+    def get_available_requests(self) -> int:
         self._remove_expired_requests()
 
-        if len(self.heap) < self.limit_requests_heap:
-            return True
-        else:
-            return False
+        return self.limit_requests_heap - len(self.heap)
 
     def _remove_expired_requests(self):
         while True:
-            if len(self.heap) == 0 or (self.heap[0] - datetime.now()).total_seconds() > 0:
+            if len(self.heap) == 0 or self.get_age_oldest_request() > 0:
                 return
             else:
                 heapq.heappop(self.heap)
+
+    def get_age_oldest_request(self) -> int:
+        return (self.heap[0] - datetime.now()).total_seconds()

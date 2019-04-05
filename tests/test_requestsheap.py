@@ -30,13 +30,13 @@ def test_requests_heap_append_event(requests_heap):
 
 
 def test_requests_heap_check_requests_heap(requests_heap):
-    assert requests_heap.check_requests_heap()
+    assert requests_heap.get_available_requests()
     requests_heap.append_event()
     requests_heap.append_event()
     requests_heap.append_event()
-    assert not requests_heap.check_requests_heap()
+    assert not requests_heap.get_available_requests()
     time.sleep(0.1)
-    assert requests_heap.check_requests_heap()
+    assert requests_heap.get_available_requests()
 
 
 def test_requests_heap_remove_expired_requests(requests_heap):
