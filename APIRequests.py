@@ -1,3 +1,6 @@
+import time
+import logging
+from typing import List, Dict, Any
 from datetime import datetime
 
 import DatabaseConnection
@@ -17,52 +20,151 @@ class APIRequests:
         self.db = DatabaseConnection.DatabaseConnection()
         self.ba = BahnAPI.BahnAPI()
         self.timetable = Timetable.Timetable(self.ba)
+        self.stations = config.stations
 
-        # TODO move to config
-        self.recent_request_lifetime = 115
+        self.recent_request_lifetime = config.RECENT_REQUEST_LIFETIME
+        self.hours_between_updates = config.HOURS_BETWEEN_UPDATES
+        self.last_complete_update: Dict[str, datetime] = {'default': None,
+                                                          'full': None}
+        self.last_single_update = self._init_last_update()
+        self.sleep_time = config.SLEEP_TIME_BETWEEN_UPDATES
+
+    def _init_last_update(self) -> Dict[str, Any]:
+        last_single_update = {}
+        for station in self.stations:
+            last_single_update[station] = {'default': None,
+                                           'full': None,
+                                           'recent': None}
+
+        return last_single_update
 
     def main_loop(self):
         while True:
-            self.check_default_tables()
-            self.check_updates()
+            logging.debug('Checking if default tables should be loaded')
+            if self.load_next_updates(update_type='default'):
+                logging.info('Getting default table updates')
+                self.get_default_tables()
 
-    def check_default_tables(self):
+            logging.debug('Checking if full update should be loaded')
+            if self.load_next_updates(update_type='full'):
+                logging.info('Getting full update')
+                self.get_full_update()
+
+            logging.debug('Getting updates')
+            self.get_single_updates()
+
+            logging.debug(f'Sleep for {self.sleep_time} seconds.')
+            time.sleep(self.sleep_time)
+
+    def wait_for_available_requests(self, requests_needed: int = 1):
+        while True:
+            if self.requests_heap.get_available_requests() < requests_needed:
+                waittime = self.requests_heap.get_age_oldest_request()
+                logging.debug(f'Waiting for {waittime} seconds')
+                time.sleep(waittime)
+            else:
+                return
+
+    def load_next_updates(self, update_type: str) -> True:
+        current_time: datetime = datetime.now()
+        tstamp_last_update: datetime = self.last_complete_update[update_type]
+        logging.debug(f'load_next_updates details: current_time {current_time}, '
+                      f'tstamp_last_update {tstamp_last_update}, update_type {update_type}, '
+                      f'hours_between_updates {self.hours_between_updates[update_type]}')
+        if tstamp_last_update is None:
+            return True
+        elif (current_time - tstamp_last_update).total_seconds() >= self.hours_between_updates[update_type]:
+            return True
+        else:
+            return False
+
+    def get_default_tables(self):
         current_time = datetime.now()
-        for station in config.stations:
+
+        timetables = []
+        for station in self.stations:
+            logging.debug(f'Starting to get default tables for station: {station}; waiting for available requests')
+            self.wait_for_available_requests(requests_needed=1)
+
             last_datehour = self.db.get_last_datehour_default_plan(station)
             missing_datehours = tdf.get_missing_default_plan_dates(current_time, last_datehour)
+            logging.debug(f'last_datehour: {last_datehour}; missing_datehours: {missing_datehours}')
             for datehour in missing_datehours:
-                if self.requests_heap.check_requests_heap():
-                    self.requests_heap.append_event()
-                    timetable = self.timetable.get_default_timetable(station, *datehour)
-                    self.db.save_bulk(timetable, 'TrainStop')
+                logging.debug(f'Getting default tables for station {station} and datehour {datehour}')
+                self.requests_heap.append_event()
+                timetables += self.timetable.get_default_timetable(station, *datehour)
+        self.last_complete_update['default'] = datetime.now()
+        logging.debug('Ended getting default plans, commiting to database')
 
-    def check_updates(self):
+        self.db.save_bulk(timetables, 'TrainStop')
+        logging.debug('Commited default plans to database')
+
+    def get_full_update(self):
         train_stop_changes = []
         for station in config.stations:
-            if self.short_time_since_last_update(station):
-                train_stop_changes = self.timetable.get_changes(station=station, request_type='recent')
-            else:
-                train_stop_changes = self.timetable.get_changes(station=station, request_type='full')
+            logging.debug(f'Starting to get full update for station: {station}; waiting for available requests')
+            self.wait_for_available_requests(requests_needed=1)
 
-        [self.process_train_stop_changes(train_stop_change) for train_stop_change in train_stop_changes]
+            train_stop_changes = self.timetable.get_changes(station=station, request_type='full')
+            self.requests_heap.append_event()
+            logging.debug(f'Got full update for station: {station}')
+        self.last_complete_update['full'] = datetime.now()
+
+        logging.debug('Ended getting full updates, processing updates')
+        [self.update_train_stops_with_changes(train_stop_change) for train_stop_change in train_stop_changes]
+        logging.debug('Ended processing updates, starting to commit to database')
         self.db.session.commit()
-
         self.db.save_bulk(train_stop_changes, 'TrainStopChange')
+        logging.debug('Ended to commit to database')
 
-    def process_train_stop_changes(self, train_stop_change: TrainStopChange):
+    def get_single_updates(self):
+        train_stop_changes = []
+        logging.debug('Starting getting regular updates')
+        for station in config.stations:
+            logging.debug(f'Starting to get update for {station}; waiting for available requests')
+            self.wait_for_available_requests(requests_needed=1)
+
+            if self.short_time_since_last_update(station):
+                train_stop_changes += self.get_single_update(station, request_type='recent')
+            else:
+                train_stop_changes += self.get_single_update(station, request_type='full')
+            self.requests_heap.append_event()
+            logging.debug(f'Got update for station: {station}')
+
+        logging.debug('Ended getting regular updates, processing updates')
+        [self.update_train_stops_with_changes(train_stop_change) for train_stop_change in train_stop_changes]
+        logging.debug('Ended processing updates, starting to commit to database')
+        self.db.session.commit()
+        self.db.save_bulk(train_stop_changes, 'TrainStopChange')
+        logging.debug('Ended to commit to database')
+
+    def get_single_update(self, station: str, request_type: str) -> List[TrainStopChange]:
+        logging.debug(f'Getting update for {station}; request_type: {request_type}')
+        train_stop_changes = self.timetable.get_changes(station=station, request_type=request_type)
+        self.last_single_update[station][request_type] = datetime.now()
+        logging.debug(f'Got update for {station} finished; request_type: {request_type}')
+
+        return train_stop_changes
+
+    def update_train_stops_with_changes(self, train_stop_change: TrainStopChange):
         if train_stop_change.trainstop_id is not None:
+            logging.debug(f'Getting TrainStop for trainstop_id {train_stop_change.trainstop_id}')
             train_stop: TrainStop = self.db.get_by_pk(TrainStop, train_stop_change.trainstop_id)
         else:
             train_stop = None
 
         if train_stop is not None:
+            logging.debug('TrainStop found, updating...')
             train_stop.update(train_stop_change)
             self.db.session.add(train_stop)
+            logging.debug('TrainStop update finished and commited to database')
 
     def short_time_since_last_update(self, station: str) -> bool:
         current_time = datetime.now()
-        last_time = self.db.get_last_tstamp_request(station=station)
-        delta = (current_time - last_time).total_seconds()
+        if self.last_single_update[station]['recent'] is not None:
+            last_time_recent = self.last_single_update[station]['recent']
+        else:
+            last_time_recent = self.db.get_last_tstamp_request(station=station, request_type='recent')
+        delta = (current_time - last_time_recent).total_seconds()
 
         return delta < self.recent_request_lifetime
