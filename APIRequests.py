@@ -171,6 +171,10 @@ class APIRequests:
             last_time_recent = self.last_single_update[station]['recent']
         else:
             last_time_recent = self.db.get_last_tstamp_request(station=station, request_type='recent')
-        delta = (current_time - last_time_recent).total_seconds()
 
-        return delta < self.recent_request_lifetime
+        if last_time_recent is not None:
+            delta = (current_time - last_time_recent).total_seconds()
+
+            return delta < self.recent_request_lifetime
+        else:
+            return False
