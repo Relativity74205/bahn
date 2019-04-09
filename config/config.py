@@ -1,5 +1,6 @@
 SLEEP_TIME_BETWEEN_UPDATES = 2
 RECENT_REQUEST_LIFETIME = 115
+MAX_DEFAULT_PLANS = 6
 HOURS_BETWEEN_UPDATES = {'default': 2,
                          'full': 0.5}
 
