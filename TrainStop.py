@@ -197,4 +197,4 @@ class TrainStop(Base):
 
     @staticmethod
     def _get_datehour_request(date: str, hour: int) -> str:
-        return date + str(hour)
+        return date + str(hour).zfill(2)
