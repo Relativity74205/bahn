@@ -1,6 +1,6 @@
 import time
 import logging
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from datetime import datetime
 
 import DatabaseConnection
@@ -24,10 +24,11 @@ class APIRequests:
 
         self.recent_request_lifetime = config.RECENT_REQUEST_LIFETIME
         self.hours_between_updates = config.HOURS_BETWEEN_UPDATES
-        self.last_complete_update: Dict[str, datetime] = {'default': None,
-                                                          'full': None}
+        self.last_complete_update: Dict[str, Optional[datetime]] = {'default': None,
+                                                                    'full': None}
         self.last_single_update = self._init_last_update()
         self.sleep_time = config.SLEEP_TIME_BETWEEN_UPDATES
+        self.max_default_plans = config.MAX_DEFAULT_PLANS
 
     def _init_last_update(self) -> Dict[str, Any]:
         last_single_update = {}
@@ -87,7 +88,7 @@ class APIRequests:
             self.wait_for_available_requests(requests_needed=1)
 
             last_datehour = self.db.get_last_datehour_default_plan(station)
-            missing_datehours = tdf.get_missing_default_plan_dates(current_time, last_datehour)
+            missing_datehours = tdf.get_missing_default_plan_dates(current_time, last_datehour, self.max_default_plans)
             logging.debug(f'last_datehour: {last_datehour}; missing_datehours: {missing_datehours}')
             for datehour in missing_datehours:
                 logging.debug(f'Getting default tables for station {station} and datehour {datehour}')
