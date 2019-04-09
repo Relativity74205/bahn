@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import math
 
 
-def get_missing_default_plan_dates(current_time: datetime, last_datehour: str, max_default_plans: int = 12) \
+def get_missing_default_plan_dates(current_time: datetime, last_datehour: str, max_default_plans: int) \
         -> List[Tuple[int, int, int, int]]:
     if last_datehour is not None:
         last_time = get_last_default_plan_time(last_datehour)
