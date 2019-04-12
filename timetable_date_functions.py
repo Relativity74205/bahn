@@ -41,4 +41,4 @@ def convert_missing_dates(missing_dates: List[datetime]) -> List[Tuple[int, int,
 
 
 def get_last_default_plan_time(last_datehour: str) -> datetime:
-    return datetime.strptime(last_datehour, '%Y%m%d%H')
+    return datetime.strptime(last_datehour, '%y%m%d%H')
