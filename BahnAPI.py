@@ -74,8 +74,8 @@ class BahnAPI:
 
         return eva_number
 
-    def _extract_eva_number(self, response: requests.Response) -> str:
-        r_json = self._xml_content_to_json(response)
+    def _extract_eva_number(self, r: requests.Response) -> str:
+        r_json = self._xml_content_to_json(r)
         try:
             eva_number = r_json['stations']['station']['@eva']
         except KeyError as e:
@@ -140,7 +140,7 @@ class BahnAPI:
             except ValueError:
                 logging.critical('Response is no json')
         else:
-            logging.info(f'{f_name}-request successful')
+            logging.debug(f'{f_name}-request successful')
 
     def _xml_content_to_json(self, response: requests.Response) -> Dict:
         # TODO exception handling

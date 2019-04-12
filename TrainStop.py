@@ -147,7 +147,7 @@ class TrainStop(Base):
         try:
             keys = config.train_event_keys[key]
             value = raw_event[keys['para1']][keys['para2']]
-        except KeyError:
+        except (KeyError, TypeError):
             # TODO logging
             value = None
 
@@ -157,7 +157,7 @@ class TrainStop(Base):
     def get_id(raw_event: Dict) -> Optional[str]:
         try:
             return raw_event[config.train_event_keys['id']]
-        except KeyError:
+        except (KeyError, TypeError):
             return None
 
     @staticmethod

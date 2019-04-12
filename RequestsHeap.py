@@ -1,13 +1,14 @@
 from datetime import datetime, timedelta
 import heapq
 
+import config.config as config
+
 
 class RequestsHeap:
     def __init__(self):
         self.heap = []
-        # TODO move limit_requests_heap and event_lifetime to config
-        self.seconds_event_lifetime = 125
-        self.limit_requests_heap = 20
+        self.seconds_event_lifetime = config.EVENT_LIFETIME_SECONDS
+        self.limit_requests_heap = config.LIMIT_REQUESTS_HEAP
 
     def append_event(self):
         self.heap.append(datetime.now() + timedelta(seconds=self.seconds_event_lifetime))
