@@ -29,6 +29,7 @@ class APIRequests:
         self.last_single_update = self._init_last_update()
         self.sleep_time = config.SLEEP_TIME_BETWEEN_UPDATES
         self.max_default_plans = config.MAX_DEFAULT_PLANS
+        self.min_seconds_between_requests = config.MIN_SECONDS_BETWEEN_REQUESTS
 
     def _init_last_update(self) -> Dict[str, Any]:
         last_single_update = {}
@@ -41,20 +42,23 @@ class APIRequests:
 
     def main_loop(self):
         while True:
-            logging.debug('Checking if default tables should be loaded')
-            if self.load_next_updates(update_type='default'):
-                logging.info('Getting default table updates')
-                self.get_default_tables()
+            try:
+                logging.debug('Checking if default tables should be loaded')
+                if self.load_next_updates(update_type='default'):
+                    logging.info('Getting default table updates')
+                    self.get_default_tables()
 
-            logging.debug('Checking if full update should be loaded')
-            if self.load_next_updates(update_type='full'):
-                logging.info('Getting full update')
-                self.get_full_update()
+                logging.debug('Checking if full update should be loaded')
+                if self.load_next_updates(update_type='full'):
+                    logging.info('Getting full update')
+                    self.get_full_update()
 
-            logging.debug('Getting updates')
-            self.get_single_updates()
+                logging.debug('Getting updates')
+                self.get_single_updates()
 
-            logging.debug(f'Sleep for {self.sleep_time} seconds.')
+                logging.debug(f'Sleep for {self.sleep_time} seconds.')
+            except Exception as e:
+                logging.critical(f'Unknown Error; error_msg: {str(e)}')
             time.sleep(self.sleep_time)
 
     def wait_for_available_requests(self, requests_needed: int = 1):
@@ -64,19 +68,24 @@ class APIRequests:
                 logging.debug(f'Waiting for {waittime} seconds')
                 time.sleep(waittime)
             else:
+                logging.debug(f'no (more) waiting necessary; returning to calling function/method')
                 return
 
     def load_next_updates(self, update_type: str) -> True:
         current_time: datetime = datetime.now()
         tstamp_last_update: datetime = self.last_complete_update[update_type]
-        logging.debug(f'load_next_updates details: current_time {current_time}, '
-                      f'tstamp_last_update {tstamp_last_update}, update_type {update_type}, '
+        logging.debug(f'load_next_updates (update_type {update_type}); '
+                      f'details: current_time {current_time}, '
+                      f'tstamp_last_update {tstamp_last_update}, '
                       f'hours_between_updates {self.hours_between_updates[update_type]}')
         if tstamp_last_update is None:
+            logging.debug(f'load_next_updates (update_type {update_type}): True')
             return True
-        elif (current_time - tstamp_last_update).total_seconds() >= self.hours_between_updates[update_type]:
+        elif (current_time - tstamp_last_update).total_seconds()/(60*60) >= self.hours_between_updates[update_type]:
+            logging.debug(f'load_next_updates (update_type {update_type}): True')
             return True
         else:
+            logging.debug(f'load_next_updates (update_type {update_type}): False')
             return False
 
     def get_default_tables(self):
@@ -108,7 +117,8 @@ class APIRequests:
             logging.debug(f'Starting to get full update for station: {station}; waiting for available requests')
             self.wait_for_available_requests(requests_needed=1)
 
-            train_stop_changes = self.timetable.get_changes(station=station, request_type='full')
+            train_stop_changes += self.timetable.get_changes(station=station, request_type='full')
+            self.last_single_update[station]['full'] = datetime.now()
             self.requests_heap.append_event()
             logging.debug(f'Got full update for station: {station}')
         self.last_complete_update['full'] = datetime.now()
@@ -124,10 +134,13 @@ class APIRequests:
         train_stop_changes = []
         logging.debug('Starting getting regular updates')
         for station in config.stations:
-            logging.debug(f'Starting to get update for {station}; waiting for available requests')
+            logging.info(f'Starting to get update for {station}; waiting for available requests')
             self.wait_for_available_requests(requests_needed=1)
 
-            if self.short_time_since_last_update(station):
+            sleep_time = self.short_time_since_last_update(station)
+            if sleep_time:
+                logging.debug(f'Too early for next recent update, sleeping for {sleep_time}')
+                time.sleep(sleep_time)
                 new_train_stop_changes = self.get_single_update(station, request_type='recent')
             else:
                 new_train_stop_changes = self.get_single_update(station, request_type='full')
@@ -135,7 +148,7 @@ class APIRequests:
                 train_stop_changes += new_train_stop_changes
 
             self.requests_heap.append_event()
-            logging.debug(f'Got update for station: {station}')
+            logging.info(f'Got update for station: {station}')
 
         logging.debug('Ended getting regular updates, processing updates')
         [self.update_train_stops_with_changes(train_stop_change) for train_stop_change in train_stop_changes]
@@ -154,27 +167,33 @@ class APIRequests:
 
     def update_train_stops_with_changes(self, train_stop_change: TrainStopChange):
         if train_stop_change.trainstop_id is not None:
-            logging.debug(f'Getting TrainStop for trainstop_id {train_stop_change.trainstop_id}')
+            # logging.debug(f'Getting TrainStop for trainstop_id {train_stop_change.trainstop_id}')
             train_stop: TrainStop = self.db.get_by_pk(TrainStop, train_stop_change.trainstop_id)
         else:
             train_stop = None
 
         if train_stop is not None:
-            logging.debug('TrainStop found, updating...')
+            # logging.debug('TrainStop found, updating...')
             train_stop.update(train_stop_change)
             self.db.session.add(train_stop)
-            logging.debug('TrainStop update finished and commited to database')
+            # logging.debug('TrainStop update finished and commited to database')
 
-    def short_time_since_last_update(self, station: str) -> bool:
+    def short_time_since_last_update(self, station: str) -> Optional[float]:
+        # TODO refactor
         current_time = datetime.now()
         if self.last_single_update[station]['recent'] is not None:
-            last_time_recent = self.last_single_update[station]['recent']
+            last_time = self.last_single_update[station]['recent']
+        elif self.last_single_update[station]['full'] is not None:
+            last_time = self.last_single_update[station]['full']
         else:
-            last_time_recent = self.db.get_last_tstamp_request(station=station, request_type='recent')
+            last_time = self.db.get_last_tstamp_request(station=station)
+        logging.debug(f'short_time_since_last_update; current_time: {current_time}, last_time: {last_time}')
 
-        if last_time_recent is not None:
-            delta = (current_time - last_time_recent).total_seconds()
-
-            return delta < self.recent_request_lifetime
+        if last_time is not None:
+            delta = (current_time - last_time).total_seconds()
+            short_time_since_last_update = delta < self.recent_request_lifetime
+            logging.debug(f'short_time_since_last_update: {short_time_since_last_update}; delta: {delta}')
+            return self.min_seconds_between_requests - delta
         else:
-            return False
+            logging.debug(f'short_time_since_last_update: False')
+            return None
