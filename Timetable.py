@@ -1,5 +1,6 @@
 from typing import Optional, List, Dict
 from datetime import datetime
+import logging
 
 import config.config as config
 from BahnAPI import BahnAPI
@@ -74,8 +75,19 @@ class Timetable:
     @staticmethod
     def _process_raw_tscs(raw_tscs: List[Dict], eva: str, station: str, request_type: str,
                           tstamp_request: datetime) -> List[TrainStopChange]:
-        return [TrainStopChange(train_stop_change, eva, station, request_type, tstamp_request)
-                for train_stop_change in raw_tscs]
+        # TODO
+        if not isinstance(raw_tscs, list):
+            raw_tscs = [raw_tscs]
+
+        train_stop_changes = []
+        for raw_tsc in raw_tscs:
+            if isinstance(raw_tsc, dict):
+                train_stop_change = TrainStopChange(raw_tsc, eva, station, request_type, tstamp_request)
+                train_stop_changes.append(train_stop_change)
+            else:
+                logging.critical(f'raw train_stop_change ({raw_tsc}) is no dict, but of type {type(raw_tsc)}.')
+
+        return train_stop_changes
 
     @staticmethod
     def _process_raw_train_stops(raw_train_stops: List[Dict], eva: str, station: str, date: str, hour: int) \
@@ -92,7 +104,7 @@ class Timetable:
     def _get_train_stops(train_stop_dict: Dict) -> List:
         try:
             train_stops = train_stop_dict['timetable']['s']
-        except KeyError:
+        except (KeyError, TypeError):
             train_stops = None
 
         return train_stops
@@ -101,7 +113,7 @@ class Timetable:
     def _get_station(default_plan_json: Dict) -> str:
         try:
             station = default_plan_json['timetable']['@station']
-        except KeyError:
+        except (KeyError, TypeError):
             station = None
 
         return station
@@ -118,7 +130,7 @@ class Timetable:
     def _get_eva(self, station: str) -> Optional[str]:
         try:
             eva = self.bahnhof_dict[station]['eva']
-        except KeyError:
+        except (KeyError, TypeError):
             eva = None
 
         return eva
