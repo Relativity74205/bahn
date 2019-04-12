@@ -30,7 +30,8 @@ class TrainStopChange(Base):
 
     def __init__(self, raw_event_data: Dict, eva: str, station: str, request_type: str, tstamp_request: datetime):
         self.raw_event = raw_event_data
-        self.event_keys = raw_event_data.keys()
+        self.event_keys = self._get_event_keys(raw_event_data)
+
         self.trainstop_id = TrainStop.get_id(self.raw_event)
         self.station = station
         self.eva_number = eva
@@ -39,6 +40,14 @@ class TrainStopChange(Base):
 
         self._set_arrival_paras()
         self._set_departure_paras()
+
+    @staticmethod
+    def _get_event_keys(raw_event_data: Dict):
+        try:
+            return raw_event_data.keys()
+        except AttributeError as e:
+            msg = f'Strange error; raw_event_data: {raw_event_data}; error_msg: {str(e)}'
+            raise AttributeError(msg)
 
     def _set_arrival_paras(self):
         if config.train_event_keys['arrival'] in self.event_keys:
