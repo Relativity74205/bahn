@@ -137,10 +137,11 @@ class APIRequests:
             logging.info(f'Starting to get update for {station}; waiting for available requests')
             self.wait_for_available_requests(requests_needed=1)
 
-            sleep_time = self.short_time_since_last_update(station)
-            if sleep_time:
-                logging.debug(f'Too early for next recent update, sleeping for {sleep_time}')
-                time.sleep(sleep_time)
+            short_time_since_last_update, sleep_time = self.short_time_since_last_update(station)
+            if short_time_since_last_update:
+                if sleep_time > 0:
+                    logging.debug(f'Too early for next recent update, sleeping for {sleep_time}')
+                    time.sleep(sleep_time)
                 new_train_stop_changes = self.get_single_update(station, request_type='recent')
             else:
                 new_train_stop_changes = self.get_single_update(station, request_type='full')
@@ -178,7 +179,7 @@ class APIRequests:
             self.db.session.add(train_stop)
             # logging.debug('TrainStop update finished and commited to database')
 
-    def short_time_since_last_update(self, station: str) -> Optional[float]:
+    def short_time_since_last_update(self, station: str) -> (bool, Optional[float]):
         # TODO refactor
         current_time = datetime.now()
         if self.last_single_update[station]['recent'] is not None:
@@ -193,7 +194,7 @@ class APIRequests:
             delta = (current_time - last_time).total_seconds()
             short_time_since_last_update = delta < self.recent_request_lifetime
             logging.debug(f'short_time_since_last_update: {short_time_since_last_update}; delta: {delta}')
-            return self.min_seconds_between_requests - delta
+            return short_time_since_last_update, self.min_seconds_between_requests - delta
         else:
             logging.debug(f'short_time_since_last_update: False')
-            return None
+            return False, None
