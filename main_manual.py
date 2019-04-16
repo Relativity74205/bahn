@@ -11,15 +11,16 @@ from TrainStopChange import TrainStopChange
 
 def main():
     set_logging_config()
-    db = DatabaseConnection.DatabaseConnection()
-    db.reset_db()
+    # db = DatabaseConnection.DatabaseConnection()
+    # db.reset_db()
 
     ba = BahnAPI.BahnAPI()
 
-    timetable = Timetable.Timetable(ba)
-    timetables = get_default_time_table(timetable, 'Duisburg Hbf', 2019, 3, 30, 24)
+    # timetable = Timetable.Timetable(ba)
+    # timetables = get_default_time_table(timetable, 'Duisburg Hbf', 2019, 3, 30, 24)
     # get_changes(timetable, 'Duisburg Hbf', 'full')
-    # get_changes(timetable, 'Duisburg Hbf', 'recent')
+    # get_changes(timetable, 'Duisburg Hbf', 'recent'))
+    get_bahnhof_dict(ba)
 
 
 def set_logging_config():
@@ -51,8 +52,11 @@ def get_default_time_table(db: DatabaseConnection, timetable: Timetable,
 
 
 def get_bahnhof_dict(bahnapi: BahnAPI):
-    stations = ['Köln Hbf', 'Düsseldorf Hbf', 'Duisburg Hbf', 'Essen Hbf', 'Oberhausen Hbf', 'Bochum Hbf',
-                'Dortmund Hbf', 'Neuss Hbf', 'Krefeld Hbf', 'Mülheim (Ruhr) Hbf', 'Düsseldorf Flughafen']
+    # stations = ['Köln Hbf', 'Düsseldorf Hbf', 'Duisburg Hbf', 'Essen Hbf', 'Oberhausen Hbf', 'Bochum Hbf',
+    #             'Dortmund Hbf', 'Neuss Hbf', 'Krefeld Hbf', 'Mülheim (Ruhr) Hbf', 'Düsseldorf Flughafen',
+    #             'Leverkusen Mitte', 'Hamm Hbf', 'Düsseldorf-Benrath', 'Aachen Hbf', 'Wattenscheid',
+    #             'Münster Hbf']
+    stations = ['Wuppertal Hbf']
     bahnhof_dict = {}
     for station in stations:
         print(station)
