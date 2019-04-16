@@ -134,11 +134,13 @@ class BahnAPI:
             elif r.status_code == 404:
                 logging.critical(f'{f_name}-request failed probably due to date is too much in the future, '
                                  f'or incorrect datetime specified, for example hour=24')
+            elif r.status_code == 500:
+                logging.critical(f'{f_name}-request failed probably due to many requests in too short a time')
 
             try:
                 logging.critical(f'JSON is {json.dumps(r.json(), indent=4)}')
             except ValueError:
-                logging.critical('Response is no json')
+                logging.critical('Response has no json')
         else:
             logging.debug(f'{f_name}-request successful')
 
