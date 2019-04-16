@@ -92,6 +92,10 @@ class Timetable:
     @staticmethod
     def _process_raw_train_stops(raw_train_stops: List[Dict], eva: str, station: str, date: str, hour: int) \
             -> List[TrainStop]:
+        # TODO
+        if not isinstance(raw_train_stops, list):
+            raw_train_stops = [raw_train_stops]
+
         trainstops = []
         for raw_train_stop in raw_train_stops:
             ts = TrainStop()
