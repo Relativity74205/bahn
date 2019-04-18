@@ -15,7 +15,7 @@ def get_missing_default_plan_dates(current_time: datetime, last_datehour: str, m
         amount_missing_datehours = max_default_plans - time_delta - 1
     else:
         last_time = current_time.replace(microsecond=0, second=0, minute=0) - timedelta(hours=1)
-        amount_missing_datehours = max_default_plans + 1
+        amount_missing_datehours = max_default_plans
 
     missing_dates = generate_missing_dates(last_time, amount_missing_datehours)
     return missing_dates
