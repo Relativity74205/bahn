@@ -1,6 +1,10 @@
 SLEEP_TIME_BETWEEN_UPDATES = 2
-RECENT_REQUEST_LIFETIME = 115
-MAX_DEFAULT_PLANS = 6
+RECENT_REQUEST_LIFETIME = 121
+MAX_DEFAULT_PLANS = 2
+EVENT_LIFETIME_SECONDS = 61
+LIMIT_REQUESTS_HEAP = 20
+MIN_SECONDS_BETWEEN_REQUESTS = 115
+
 HOURS_BETWEEN_UPDATES = {'default': 2,
                          'full': 0.5}
 
@@ -23,7 +27,35 @@ stations = ['Köln Hbf',
             'Neuss Hbf',
             'Krefeld Hbf',
             'Mülheim (Ruhr) Hbf',
-            'Düsseldorf Flughafen']
+            'Düsseldorf Flughafen',
+            'Hamm (Westf) Pbf',
+            'Münster (Westf) Hbf',
+            'Aachen Hbf',
+            'Wattenscheid',
+            'Düsseldorf-Benrath',
+            'Minden (Westf)',
+            'Mönchengladbach Hbf',
+            # 'Hattingen (Ruhr) Mitte',
+            'Solingen Hbf',
+            'Köln/Bonn Flughafen',
+            'Koblenz Hbf',
+            'Moers',
+            'Bottrop Hbf',
+            'Gelsenkirchen Hbf',
+            'Wesel',
+            'Köln Messe/Deutz',
+            'Köln Messe/Deutz (tief)',
+            'Herne',
+            'Hagen Hbf',
+            'Recklinghausen Hbf',
+            'Ratingen Ost',
+            'Dinslaken',
+            # 'Gladbeck West',
+            'Bonn Hbf',
+            'Siegburg/Bonn',
+            'Bielefeld Hbf',
+            'Wuppertal Hbf'
+            ]
 
 bahnhof_dict = {'Köln Hbf': {'abbrev': 'KK', 'eva': '8000207'},
                 'Düsseldorf Hbf': {'abbrev': 'KD', 'eva': '8000085'},
@@ -35,7 +67,36 @@ bahnhof_dict = {'Köln Hbf': {'abbrev': 'KK', 'eva': '8000207'},
                 'Neuss Hbf': {'abbrev': 'KN', 'eva': '8000274'},
                 'Krefeld Hbf': {'abbrev': 'KKR', 'eva': '8000211'},
                 'Mülheim (Ruhr) Hbf': {'abbrev': 'EMLR', 'eva': '8000259'},
-                'Düsseldorf Flughafen': {'abbrev': 'KDFF', 'eva': '8000082'}}
+                'Düsseldorf Flughafen': {'abbrev': 'KDFF', 'eva': '8000082'},
+                'Hamm (Westf) Pbf': {'abbrev': 'EHM', 'eva': '8000149'},
+                'Münster (Westf) Hbf': {'abbrev': 'EMST', 'eva': '8000263'},
+                'Aachen Hbf': {'abbrev': 'KA', 'eva': '8000001'},
+                'Wattenscheid': {'abbrev': 'EWAT', 'eva': '8006226'},
+                'Düsseldorf-Benrath': {'abbrev': 'KDBE', 'eva': '8001584'},
+                'Leverkusen Mitte': {'abbrev': 'KLMH', 'eva': '8006713'},
+                'Minden (Westf)': {'abbrev': 'HM', 'eva': '8000252'},
+                'Mönchengladbach Hbf': {'abbrev': 'KM', 'eva': '8000253'},
+                'Hattingen (Ruhr) Mitte': {'abbrev': 'EHTM', 'eva': '8002640'},
+                'Solingen Hbf': {'abbrev': 'KSO', 'eva': '8000087'},
+                'Köln/Bonn Flughafen': {'abbrev': 'KFKB', 'eva': '8003330'},
+                'Koblenz Hbf': {'abbrev': 'KKO', 'eva': '8000206'},
+                'Moers': {'abbrev': 'KMO', 'eva': '8000644'},
+                'Bottrop Hbf': {'abbrev': 'EBTH', 'eva': '8000047'},
+                'Gelsenkirchen Hbf': {'abbrev': 'EG', 'eva': '8000118'},
+                'Wesel': {'abbrev': 'EWES', 'eva': '8000242'},
+                'Köln Messe/Deutz': {'abbrev': 'KKDZ', 'eva': '8003368'},
+                'Köln Messe/Deutz (tief)': {'abbrev': 'KKDT', 'eva': '8073368'},
+                'Herne': {'abbrev': 'EHER', 'eva': '8000164'},
+                'Hagen Hbf': {'abbrev': 'EHG', 'eva': '8000142'},
+                'Recklinghausen Hbf': {'abbrev': 'ERE', 'eva': '8000307'},
+                'Ratingen Ost': {'abbrev': 'KRAO', 'eva': '8004948'},
+                'Dinslaken': {'abbrev': 'EDIN', 'eva': '8001469'},
+                'Gladbeck West': {'abbrev': 'EGBW', 'eva': '8000125'},
+                'Bonn Hbf': {'abbrev': 'KB', 'eva': '8000044'},
+                'Siegburg/Bonn': {'abbrev': 'KSIB', 'eva': '8005556'},
+                'Bielefeld Hbf': {'abbrev': 'EBILP', 'eva': '8000036'},
+                'Wuppertal Hbf': {'abbrev': 'KW', 'eva': '8000266'}
+                }
 
 train_event_keys = {'arrival': 'ar',
                     'departure': 'dp',
