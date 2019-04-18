@@ -105,7 +105,8 @@ class APIRequests:
                 new_timetables = self.timetable.get_default_timetable(station, *datehour)
                 if new_timetables is not None:
                     timetables += new_timetables
-                    logging.debug(f'Got successfully default tables for station {station} and datehour {datehour}')
+                    logging.debug(f'Got successfully {len(new_timetables)} default table(s) '
+                                  f'for station {station} and datehour {datehour}')
                 else:
                     logging.critical(f'get_default_tables: new_timetables for station {station} is None!')
         self.last_complete_update['default'] = datetime.now()
@@ -120,13 +121,13 @@ class APIRequests:
     def get_full_update(self):
         train_stop_changes = []
         for station in config.stations:
-            logging.debug(f'Starting to get full update for station: {station}; waiting for available requests')
+            logging.debug(f'Starting to get full update for station: {station}; checking if waiting is necessary')
             self.wait_for_available_requests(requests_needed=1)
 
             new_train_stop_changes = self.timetable.get_changes(station=station, request_type='full')
             if new_train_stop_changes is not None:
                 train_stop_changes += new_train_stop_changes
-                logging.debug(f'Got full update for station: {station}')
+                logging.debug(f'Got {len(train_stop_changes)} full update(s) for station: {station}')
             else:
                 logging.critical(f'get_full_update: new_train_stop_changes for station {station} is None!')
 
@@ -157,15 +158,21 @@ class APIRequests:
 
             short_time_since_last_update, sleep_time = self.short_time_since_last_update(station)
             if short_time_since_last_update:
+                logging.debug(f'Getting recent update for station: {station}')
                 if sleep_time > 0:
                     logging.debug(f'Too early for next recent update, sleeping for {sleep_time}')
                     time.sleep(sleep_time)
                 new_train_stop_changes = self.get_single_update(station, request_type='recent')
+                self.last_single_update[station]['recent'] = datetime.now()
             else:
+                logging.debug(f'Getting full update for station: {station}')
                 new_train_stop_changes = self.get_single_update(station, request_type='full')
+                self.last_single_update[station]['recent'] = datetime.now()
+                self.last_single_update[station]['full'] = datetime.now()
+
             if new_train_stop_changes is not None:
                 train_stop_changes += new_train_stop_changes
-                logging.info(f'Got update for station: {station}')
+                logging.info(f'Got {len(new_train_stop_changes)} update(s) for station: {station}')
             else:
                 logging.critical(f'get_single_updates: new_train_stop_changes for station {station} is None!')
 
