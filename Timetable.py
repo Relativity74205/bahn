@@ -20,7 +20,10 @@ class Timetable:
         raw_tscs = self._get_raw_train_stop_changes(request_type, eva=eva)
 
         if raw_tscs is not None:
-            train_stop_changes = self._process_raw_tscs(raw_tscs, eva, station, request_type, tstamp_request)
+            if len(raw_tscs) == 0:
+                train_stop_changes = []
+            else:
+                train_stop_changes = self._process_raw_tscs(raw_tscs, eva, station, request_type, tstamp_request)
         else:
             train_stop_changes = None
 
@@ -35,7 +38,10 @@ class Timetable:
         raw_train_stops = self._get_raw_data('default', eva=eva, date=date, hour=hour_filled)
 
         if raw_train_stops is not None:
-            timetable = self._process_raw_train_stops(raw_train_stops, eva, station, date, hour)
+            if len(raw_train_stops) == 0:
+                timetable = []
+            else:
+                timetable = self._process_raw_train_stops(raw_train_stops, eva, station, date, hour)
         else:
             timetable = None
 
@@ -107,9 +113,15 @@ class Timetable:
     @staticmethod
     def _get_train_stops(train_stop_dict: Dict) -> List:
         try:
-            train_stops = train_stop_dict['timetable']['s']
+            train_stops = train_stop_dict['timetable']
         except (KeyError, TypeError):
             train_stops = None
+
+        if train_stops is not None:
+            try:
+                train_stops = train_stops['s']
+            except (KeyError, TypeError):
+                train_stops = []
 
         return train_stops
 
