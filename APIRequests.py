@@ -105,11 +105,17 @@ class APIRequests:
                 new_timetables = self.timetable.get_default_timetable(station, *datehour)
                 if new_timetables is not None:
                     timetables += new_timetables
+                    logging.debug(f'Got successfully default tables for station {station} and datehour {datehour}')
+                else:
+                    logging.critical(f'get_default_tables: new_timetables for station {station} is None!')
         self.last_complete_update['default'] = datetime.now()
         logging.debug('Ended getting default plans, commiting to database')
 
-        self.db.save_bulk(timetables, 'TrainStop')
-        logging.debug('Commited default plans to database')
+        if timetables is not None and len(timetables) > 0:
+            self.db.save_bulk(timetables, 'TrainStop')
+            logging.debug('Commited default plans to database')
+        else:
+            logging.critical('Nothing to commit to database')
 
     def get_full_update(self):
         train_stop_changes = []
@@ -117,18 +123,30 @@ class APIRequests:
             logging.debug(f'Starting to get full update for station: {station}; waiting for available requests')
             self.wait_for_available_requests(requests_needed=1)
 
-            train_stop_changes += self.timetable.get_changes(station=station, request_type='full')
+            new_train_stop_changes = self.timetable.get_changes(station=station, request_type='full')
+            if new_train_stop_changes is not None:
+                train_stop_changes += new_train_stop_changes
+                logging.debug(f'Got full update for station: {station}')
+            else:
+                logging.critical(f'get_full_update: new_train_stop_changes for station {station} is None!')
+
             self.last_single_update[station]['full'] = datetime.now()
             self.requests_heap.append_event()
-            logging.debug(f'Got full update for station: {station}')
+
+        logging.debug(f'Ended getting full updates, '
+                      f'last_complete_full_update was {self.last_complete_update["full"]}')
         self.last_complete_update['full'] = datetime.now()
 
-        logging.debug('Ended getting full updates, processing updates')
+        logging.debug(f'Set last_complete_full_update to {self.last_complete_update["full"]}. '
+                      f'Stating to process updates')
         [self.update_train_stops_with_changes(train_stop_change) for train_stop_change in train_stop_changes]
         logging.debug('Ended processing updates, starting to commit to database')
-        self.db.session.commit()
-        self.db.save_bulk(train_stop_changes, 'TrainStopChange')
-        logging.debug('Ended to commit to database')
+        if train_stop_changes is not None and len(train_stop_changes) > 0:
+            self.db.session.commit()
+            self.db.save_bulk(train_stop_changes, 'TrainStopChange')
+            logging.debug('Ended to commit to database')
+        else:
+            logging.critical('Nothing to commit to database')
 
     def get_single_updates(self):
         train_stop_changes = []
@@ -147,16 +165,21 @@ class APIRequests:
                 new_train_stop_changes = self.get_single_update(station, request_type='full')
             if new_train_stop_changes is not None:
                 train_stop_changes += new_train_stop_changes
+                logging.info(f'Got update for station: {station}')
+            else:
+                logging.critical(f'get_single_updates: new_train_stop_changes for station {station} is None!')
 
             self.requests_heap.append_event()
-            logging.info(f'Got update for station: {station}')
 
         logging.debug('Ended getting regular updates, processing updates')
         [self.update_train_stops_with_changes(train_stop_change) for train_stop_change in train_stop_changes]
         logging.debug('Ended processing updates, starting to commit to database')
-        self.db.session.commit()
-        self.db.save_bulk(train_stop_changes, 'TrainStopChange')
-        logging.debug('Ended to commit to database')
+        if train_stop_changes is not None and len(train_stop_changes) > 0:
+            self.db.session.commit()
+            self.db.save_bulk(train_stop_changes, 'TrainStopChange')
+            logging.debug('Ended to commit to database')
+        else:
+            logging.critical('Nothing to commit to database')
 
     def get_single_update(self, station: str, request_type: str) -> List[TrainStopChange]:
         logging.debug(f'Getting update for {station}; request_type: {request_type}')
