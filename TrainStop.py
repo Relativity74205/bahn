@@ -1,7 +1,7 @@
 from typing import Dict, Optional
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Float
 
 import config.config as config
 from Base import Base
@@ -26,8 +26,8 @@ class TrainStop(Base):
     planed_departure_datetime = Column(DateTime)
     planed_departure_platform = Column(String)
     planed_departure_to = Column(String)
-    departure_delay = Column(Integer)
-    arrival_delay = Column(Integer)
+    departure_delay = Column(Float)
+    arrival_delay = Column(Float)
     flag_cancelled_arrival = Column(Integer)
     flag_cancelled_departure = Column(Integer)
     flag_delayed_departure = Column(Integer)
@@ -55,10 +55,10 @@ class TrainStop(Base):
         self._set_departure_paras()
 
     def update(self, train_stop_change):
-        self.departure_delay = self._calc_delay(train_stop_change.changed_departure_datetime,
-                                                self.planed_departure_datetime)
-        self.arrival_delay = self._calc_delay(train_stop_change.changed_arrival_datetime,
-                                              self.planed_arrival_datetime)
+        self.departure_delay = self._calc_delay(planned_time=self.planed_departure_datetime,
+                                                changed_time=train_stop_change.changed_departure_datetime)
+        self.arrival_delay = self._calc_delay(planned_time=self.planed_arrival_datetime,
+                                              changed_time=train_stop_change.changed_arrival_datetime)
         self.flag_cancelled_arrival = self._calc_flag_cancelled(train_stop_change.changed_arrival_status)
         self.flag_cancelled_departure = self._calc_flag_cancelled(train_stop_change.changed_departure_status)
         self.flag_delayed_departure = self._calc_flag_delayed(train_stop_change.changed_departure_datetime)
@@ -99,11 +99,12 @@ class TrainStop(Base):
             return 1
 
     @staticmethod
-    def _calc_delay(planned_time: datetime, changed_time: datetime) -> int:
+    def _calc_delay(planned_time: datetime, changed_time: datetime) -> Optional[float]:
         if changed_time is None or planned_time is None:
-            return 0
+            return None
         else:
-            (changed_time - planned_time).total_seconds()
+            delay = (changed_time - planned_time).total_seconds()/60
+            return delay
 
     def _set_arrival_paras(self):
         if config.train_event_keys['arrival'] in self.event_keys:
