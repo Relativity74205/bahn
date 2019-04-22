@@ -1,4 +1,5 @@
 config_credentials.py
 .idea
+.pytest_cache
 venv
 documents
