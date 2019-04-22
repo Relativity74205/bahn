@@ -140,7 +140,7 @@ class BahnAPI:
             try:
                 logging.critical(f'JSON is {json.dumps(r.json(), indent=4)}')
             except ValueError:
-                logging.critical('Response has no json')
+                pass
         else:
             logging.debug(f'{f_name}-request successful')
 
