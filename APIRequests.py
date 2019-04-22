@@ -93,7 +93,7 @@ class APIRequests:
 
         timetables = []
         for station in self.stations:
-            logging.debug(f'Starting to get default tables for station: {station}; waiting for available requests')
+            logging.debug(f'Starting to get default tables for station: {station}; checking if waiting is necessary')
             self.wait_for_available_requests(requests_needed=1)
 
             last_datehour = self.db.get_last_datehour_default_plan(station)
@@ -153,7 +153,7 @@ class APIRequests:
         train_stop_changes = []
         logging.debug('Starting getting regular updates')
         for station in config.stations:
-            logging.info(f'Starting to get update for {station}; waiting for available requests')
+            logging.info(f'Starting to get update for {station}; checking if waiting is necessary')
             self.wait_for_available_requests(requests_needed=1)
 
             short_time_since_last_update, sleep_time = self.short_time_since_last_update(station)
