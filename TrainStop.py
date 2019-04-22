@@ -26,13 +26,6 @@ class TrainStop(Base):
     planed_departure_datetime = Column(DateTime)
     planed_departure_platform = Column(String)
     planed_departure_to = Column(String)
-    departure_delay = Column(Float)
-    arrival_delay = Column(Float)
-    flag_cancelled_arrival = Column(Integer)
-    flag_cancelled_departure = Column(Integer)
-    flag_delayed_departure = Column(Integer)
-    flag_delayed_arrival = Column(Integer)
-    flag_changed_platform = Column(Integer)
 
     def __init__(self):
         self.raw_event = None
@@ -54,18 +47,6 @@ class TrainStop(Base):
         self._set_arrival_paras()
         self._set_departure_paras()
 
-    def update(self, train_stop_change):
-        self.departure_delay = self._calc_delay(planned_time=self.planed_departure_datetime,
-                                                changed_time=train_stop_change.changed_departure_datetime)
-        self.arrival_delay = self._calc_delay(planned_time=self.planed_arrival_datetime,
-                                              changed_time=train_stop_change.changed_arrival_datetime)
-        self.flag_cancelled_arrival = self._calc_flag_cancelled(train_stop_change.changed_arrival_status)
-        self.flag_cancelled_departure = self._calc_flag_cancelled(train_stop_change.changed_departure_status)
-        self.flag_delayed_departure = self._calc_flag_delayed(train_stop_change.changed_departure_datetime)
-        self.flag_delayed_arrival = self._calc_flag_delayed(train_stop_change.changed_arrival_datetime)
-        self.flag_changed_platform = self._calc_changed_platform(train_stop_change.changed_departure_platform,
-                                                                 train_stop_change.changed_arrival_platform)
-
     def convert_to_dict(self):
         d = vars(self)
         try:
@@ -76,35 +57,6 @@ class TrainStop(Base):
             pass
 
         return d
-
-    @staticmethod
-    def _calc_flag_cancelled(changed_status):
-        if changed_status == 'c':
-            return 1
-        else:
-            return 0
-
-    @staticmethod
-    def _calc_changed_platform(changed_departure_platform, changed_arrival_platform):
-        if changed_arrival_platform is None and changed_departure_platform is None:
-            return 0
-        else:
-            return 1
-
-    @staticmethod
-    def _calc_flag_delayed(changed_time):
-        if changed_time is None:
-            return 0
-        else:
-            return 1
-
-    @staticmethod
-    def _calc_delay(planned_time: datetime, changed_time: datetime) -> Optional[float]:
-        if changed_time is None or planned_time is None:
-            return None
-        else:
-            delay = (changed_time - planned_time).total_seconds()/60
-            return delay
 
     def _set_arrival_paras(self):
         if config.train_event_keys['arrival'] in self.event_keys:
@@ -119,13 +71,6 @@ class TrainStop(Base):
             self.planed_departure_datetime = self.get_datetime(departure_datetime)
             self.planed_departure_platform = self.get_value(self.raw_event, 'departure_platform')
             self.planed_departure_to = self.get_destination_place(self.get_value(self.raw_event, 'departure_path'))
-
-    @staticmethod
-    def _get_train_number(number, train_type):
-        if number.isdigit():
-            return train_type + number
-        else:
-            return number
 
     def _get_line(self) -> Optional[str]:
         ar = config.train_event_keys['arrival']
