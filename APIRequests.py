@@ -45,7 +45,7 @@ class APIRequests:
                 if self.load_next(update_type='default'):
                     self.get_default_tables()
                 if self.load_next(update_type='full'):
-                    self.get_full_update()
+                    self.get_update(full_update=True)
                 self.get_update()
             except Exception as e:
                 logging.critical(f'Unknown Error; error_msg: {str(e)}')
@@ -107,50 +107,36 @@ class APIRequests:
         logging.debug('Ended getting default plans, commiting to database')
         self.save_data(train_stops, 'TrainStop')
 
-    def get_full_update(self):
+    def get_update(self, full_update: bool = False):
         train_stop_changes = []
-        logging.debug('Starting getting full update')
+        logging.debug(f'Starting getting update; full_update: {full_update}')
         for station in config.stations:
-            self.wait_for_available_requests(requests_needed=1, func_name='full_update', station=station)
+            self.wait_for_available_requests(requests_needed=1,
+                                             func_name=f'update; full_update: {full_update}', station=station)
 
-            new_train_stop_changes = self.get_single_update(station, request_type='full')
-            if new_train_stop_changes is not None:
-                train_stop_changes += new_train_stop_changes
-                logging.debug(f'Got {len(train_stop_changes)} full update(s) for station: {station}')
-            else:
-                logging.critical(f'get_full_update: new_train_stop_changes for station {station} is None!')
-
-            self.last_single_update[station]['full'] = datetime.now()
-            self.requests_heap.append_event()
-
-        logging.debug(f'Ended getting full updates, '
-                      f'last_complete_full_update was {self.last_complete_update["full"]}')
-        self.last_complete_update['full'] = datetime.now()
-
-        logging.debug(f'Set last_complete_full_update to {self.last_complete_update["full"]}. '
-                      f'starting to commit to database')
-        self.save_data(train_stop_changes, 'TrainStopChange')
-
-    def get_update(self):
-        train_stop_changes = []
-        logging.debug('Starting getting update')
-        for station in config.stations:
-            self.wait_for_available_requests(requests_needed=1, func_name='update', station=station)
-
-            short_time_since_last_update, sleep_time = self.short_time_since_last_update(station)
-            self.sleep(sleep_type='short_time_since_last_update', sleep_time=sleep_time)
-            if short_time_since_last_update:
-                new_train_stop_changes = self.get_single_update(station, request_type='recent')
-            else:
+            if full_update:
                 new_train_stop_changes = self.get_single_update(station, request_type='full')
+            else:
+                short_time_since_last_update, sleep_time = self.short_time_since_last_update(station)
+                self.sleep(sleep_type='short_time_since_last_update', sleep_time=sleep_time)
+                if short_time_since_last_update:
+                    new_train_stop_changes = self.get_single_update(station, request_type='recent')
+                else:
+                    new_train_stop_changes = self.get_single_update(station, request_type='full')
 
             if new_train_stop_changes is not None:
                 train_stop_changes += new_train_stop_changes
-                logging.info(f'Got {len(new_train_stop_changes)} update(s) for station: {station}')
+                logging.info(f'Got {len(new_train_stop_changes)} update(s) for station: {station}; '
+                             f'full_update: {full_update}')
             else:
-                logging.critical(f'get_single_updates: new_train_stop_changes for station {station} is None!')
+                logging.critical(f'get_single_updates: new_train_stop_changes for station {station} is None;'
+                                 f'full_update: {full_update}')
 
             self.requests_heap.append_event()
+
+        if full_update:
+            self.last_complete_update['full'] = datetime.now()
+            logging.debug(f'Set last_complete_full_update to {self.last_complete_update["full"]}.')
 
         logging.debug('Ended getting regular updates, starting to commit to database')
         self.save_data(train_stop_changes, 'TrainStopChange')
