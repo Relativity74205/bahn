@@ -3,13 +3,10 @@ import logging
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
-import DatabaseConnection
-import BahnAPI
-import Timetable
+from project import BahnAPI, DatabaseConnection, timetable_date_functions as tdf, Timetable
 import config.config as config
-import timetable_date_functions as tdf
-from TrainStopChange import TrainStopChange
-from RequestsHeap import RequestsHeap
+from project.TrainStopChange import TrainStopChange
+from project.RequestsHeap import RequestsHeap
 
 
 class APIRequests:

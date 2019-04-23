@@ -3,8 +3,8 @@ from typing import Dict, Optional
 
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 
-from TrainStop import TrainStop
-from Base import Base
+from project.TrainStop import TrainStop
+from project.Base import Base
 import config.config as config
 
 

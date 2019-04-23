@@ -3,9 +3,9 @@ from datetime import datetime
 import logging
 
 import config.config as config
-from BahnAPI import BahnAPI
-from TrainStopChange import TrainStopChange
-from TrainStop import TrainStop
+from project.BahnAPI import BahnAPI
+from project.TrainStopChange import TrainStopChange
+from project.TrainStop import TrainStop
 
 
 class Timetable:

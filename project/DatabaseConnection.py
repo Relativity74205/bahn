@@ -6,9 +6,9 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 
 import config.config as config
-from Base import Base
-from TrainStopChange import TrainStopChange
-from TrainStop import TrainStop
+from project.Base import Base
+from project.TrainStopChange import TrainStopChange
+from project.TrainStop import TrainStop
 
 
 class DatabaseConnection:

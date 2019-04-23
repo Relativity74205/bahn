@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime
 
-from DatabaseConnection import Base
+from project.DatabaseConnection import Base
 
 
 class Message(Base):

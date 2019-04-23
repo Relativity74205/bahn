@@ -1,10 +1,10 @@
 from typing import Dict, Optional
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, DateTime, Float
+from sqlalchemy import Column, String, DateTime
 
 import config.config as config
-from Base import Base
+from project.Base import Base
 
 
 class TrainStop(Base):
