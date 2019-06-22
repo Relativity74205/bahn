@@ -2,9 +2,9 @@ from datetime import datetime
 
 import pytest
 
-from TrainStop import TrainStop
+from project.TrainStop import TrainStop
 
-import tests.data_tests as data_tests
+import tests.data.data_tests as data_tests
 
 
 # TODO rewrite to check object and not dict
@@ -15,20 +15,12 @@ import tests.data_tests as data_tests
 ])
 def test_eval_default_plan(test_input, expected):
     ts = TrainStop()
-    ts.create(test_input, '8000086', 'Duisburg Hbf')
+    ts.create(test_input, '8000086', 'Duisburg Hbf', '20190102', 12)
     te = vars(ts)
     te.pop('raw_event')
     te.pop('event_keys')
     te.pop('_sa_instance_state')
     assert te == expected
-
-
-@pytest.mark.parametrize('number, train_type, train_number', [
-    ('RE19', 'RE', 'RE19'),
-    ('3', 'S', 'S3')
-])
-def test_get_train_number(number, train_type, train_number):
-    assert TrainStop._get_train_number(number, train_type) == train_number
 
 
 @pytest.mark.parametrize('input_dict, line', [
@@ -39,7 +31,9 @@ def test_get_train_number(number, train_type, train_number):
     ({'tl': {'@c': 'ABR', '@n': '1234'}, 'ar': {'p': '2', '@l': 'RE19'}}, 'RE19')
 ])
 def test_get_line(input_dict, line):
-    assert TrainStop(input_dict, '123', 'Duisburg Hbf')._get_line() == line
+    ts = TrainStop()
+    ts.create(input_dict, '123', 'Duisburg Hbf', '20190102', 12)
+    assert ts._get_line() == line
 
 
 @pytest.mark.parametrize('ppth, place', [

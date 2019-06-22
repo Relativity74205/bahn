@@ -1,6 +1,6 @@
 import logging
 
-import APIRequests
+from project import APIRequests
 
 
 def main():

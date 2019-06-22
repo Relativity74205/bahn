@@ -46,7 +46,7 @@ class APIRequests:
                 self.get_update()
             except Exception as e:
                 logging.critical(f'Unknown Error; error_msg: {str(e)}')
-            self.sleep(sleep_type='loop', sleep_time=self.sleep_time_between_loops)
+            self.sleep(sleep_type='loop_iteration_ended', sleep_time=self.sleep_time_between_loops)
 
     def wait_for_available_requests(self, requests_needed, func_name, station):
         logging.debug(f'Starting to get {func_name} for station: {station}; checking if waiting is necessary')
@@ -171,8 +171,8 @@ class APIRequests:
 
     @staticmethod
     def sleep(sleep_type: str, sleep_time: float):
-        if sleep_type == 'loop':
-            logging.debug(f'Sleep for {sleep_time} seconds.')
+        if sleep_type == 'loop_iteration_ended':
+            logging.debug(f'Sleep for {sleep_time} seconds after loop iteration ended.')
             time.sleep(sleep_time)
         else:
             if sleep_time > 0:

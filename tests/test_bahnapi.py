@@ -4,8 +4,8 @@ import pytest
 import requests
 
 import config.config as config
-import BahnAPI
-import tests.data_tests as data_tests
+from project import BahnAPI
+import tests.data.data_tests as data_tests
 
 
 @pytest.fixture

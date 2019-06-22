@@ -1,12 +1,9 @@
 import time
 import logging
-from typing import List
 
-import DatabaseConnection
-import BahnAPI
-import Timetable
-from TrainStop import TrainStop
-from TrainStopChange import TrainStopChange
+from project import BahnAPI, DatabaseConnection, Timetable
+from project.TrainStop import TrainStop
+from project.TrainStopChange import TrainStopChange
 
 
 def main():
@@ -14,11 +11,11 @@ def main():
     db = DatabaseConnection.DatabaseConnection()
     db.reset_db()
 
-    ba = BahnAPI.BahnAPI()
+    #ba = BahnAPI.BahnAPI()
 
-    timetable = Timetable.Timetable(ba)
-    get_default_time_table(db, timetable, 'Recklinghausen Hbf', 2019, 4, 18, 21)
-    get_changes(db, timetable, 'Recklinghausen Hbf', 'recent')
+    #timetable = Timetable.Timetable(ba)
+    #get_default_time_table(db, timetable, 'Recklinghausen Hbf', 2019, 4, 18, 21)
+    #get_changes(db, timetable, 'Recklinghausen Hbf', 'recent')
     # get_changes(timetable, 'Duisburg Hbf', 'recent'))
     # get_bahnhof_dict(ba)
 

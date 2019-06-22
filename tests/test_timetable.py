@@ -1,7 +1,7 @@
 import pytest
 
-from BahnAPI import BahnAPI
-from Timetable import Timetable
+from project.BahnAPI import BahnAPI
+from project.Timetable import Timetable
 
 
 @pytest.fixture

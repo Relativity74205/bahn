@@ -13,7 +13,7 @@ Vagrant.configure("2") do |config|
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://vagrantcloud.com/search.
   config.vm.box = "generic/ubuntu1804"
-  config.vm.provision "shell", path: "bash_ubuntu_startup.sh"
+  # config.vm.provision "shell", path: "bash_ubuntu_startup.sh"
   # config.vm.synced_folder ".", "/home/ubuntu/bahnscrapper", type: "rsync"
 
   # Disable automatic box update checking. If you disable this, then

@@ -1,7 +1,7 @@
 import pytest
 from datetime import datetime
 
-import timetable_date_functions as tdf
+from project import timetable_date_functions as tdf
 
 
 @pytest.mark.parametrize("last_datehour, last_time", [
