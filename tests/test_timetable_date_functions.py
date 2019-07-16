@@ -41,5 +41,4 @@ def test_convert_missing_dates(missing_dates, missing_dates_tuple):
 ])
 def test_get_missing_default_plan_dates(current_time, last_datehour, missing_dates):
     a = tdf.get_missing_default_plan_dates(current_time, last_datehour)
-    print(a)
     assert a == missing_dates
