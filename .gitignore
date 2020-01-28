@@ -3,3 +3,6 @@ config_credentials.py
 .pytest_cache
 venv
 documents
+.vagrant
+*.log
+__pycache__
