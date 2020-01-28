@@ -6,3 +6,4 @@ documents
 .vagrant
 *.log
 __pycache__
+data
